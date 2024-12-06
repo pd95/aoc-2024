@@ -49,6 +49,7 @@ struct Day05: AdventDay {
     return violatingPages
   }
 
+  // Replace this with your solution for the first part of the day's challenge.
   func part1() -> Int {
     var result = 0
     let pageUpdates = pageUpdates
@@ -70,6 +71,7 @@ struct Day05: AdventDay {
     return result
   }
 
+  // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Int {
     var result = 0
     let pageUpdates = pageUpdates
