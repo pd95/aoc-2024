@@ -138,6 +138,7 @@ struct Day06: AdventDay {
     }
   }
 
+  // Replace this with your solution for the first part of the day's challenge.
   func part1() -> Int {
     var stepCount = 0
 
@@ -165,82 +166,13 @@ struct Day06: AdventDay {
       currentPosition = nextPos
     } while currentPosition.isValid
 
-    print("🔴 Leaving grid")
+//    print("🔴 Leaving grid")
 
     return stepCount
   }
 
-  func findLoopPossibilities(_ grid: Grid, currentPosition: Position, direction: Direction, backtracking: Bool = false) -> Set<Position> {
-    var blockPositions = Set<Position>()
-    var grid = grid
 
-    guard let char = grid.charAt(position: currentPosition) else {
-      return blockPositions
-    }
-
-//    print(">>> \(currentPosition) \(direction)")
-//    print(grid.description)
-
-    var direction = direction
-    var nextPos = currentPosition.position(towards: direction)
-
-    if backtracking {
-      if char == direction.character {
-        print("🟢 Loop detected at \(currentPosition)!")
-        blockPositions.insert(currentPosition)
-        return blockPositions
-      }
-    } else {
-      // detect a possible loop whenever we cross our path
-      if char == "N" && direction == .west ||
-          char == "W" && direction == .south ||
-          char == "E" && direction == .north ||
-          char == "S" && direction == .east
-      {
-        let blockPosition = currentPosition.position(towards: direction)
-        var tempGrid = grid
-        tempGrid.mark(position: blockPosition, char: "O")
-        tempGrid.mark(position: currentPosition, char: "+")
-//        print(tempGrid.description)
-        print("🟢 Loop is possible!")
-        blockPositions.insert(blockPosition)
-      }
-    }
-
-
-    if char != "#" && char != "O" {
-      grid.mark(position: currentPosition, char: direction.character)
-    }
-
-    while nextPos.isValid && (grid.charAt(position: nextPos) == "#" || grid.charAt(position: nextPos) == "O") {
-      grid.mark(position: currentPosition, char: "+")
-      direction.turn()
-//      print("  => turning \(direction)")
-      nextPos = currentPosition.position(towards: direction)
-    }
-//    print(grid.description)
-
-    if nextPos.isValid {
-      blockPositions = blockPositions.union(findLoopPossibilities(grid, currentPosition: nextPos, direction: direction, backtracking: backtracking))
-
-      if !backtracking &&  grid.charAt(position: nextPos) == "." {
-//        print("trying to backtrack")
-        var tempGrid = grid
-        tempGrid.mark(position: nextPos, char: "O")
-        tempGrid.mark(position: currentPosition, char: "+")
-//        print(tempGrid)
-        if findLoopPossibilities(tempGrid, currentPosition: currentPosition, direction: direction, backtracking: true).isEmpty == false {
-//          print("Loop found while backtracking")
-          blockPositions.insert(nextPos)
-        }
-
-      }
-    }
-
-//    print("🟡 returning \(blockPositions)")
-    return blockPositions
-  }
-
+  // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Int {
     let initialGrid = Grid(data: data)
     var grid = initialGrid
@@ -286,7 +218,7 @@ struct Day06: AdventDay {
       currentPosition = nextPos
     } while currentPosition.isValid
 
-    print("🔴 Leaving grid at \(currentPosition)", history.count)
+//    print("🔴 Leaving grid at \(currentPosition)", history.count)
 //    print(grid.description)
 
     struct DirectedPosition: Hashable {
