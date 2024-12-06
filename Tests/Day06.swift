@@ -30,5 +30,5 @@ struct Day06Tests {
   }
 
   // Result should be 4778 for part1 "Day06.txt"
-  // Result should be 5564 for part2 "Day06.txt"
+  // Result should be 1618 for part2 "Day06.txt"
 }

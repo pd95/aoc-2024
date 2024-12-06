@@ -42,6 +42,10 @@ struct Day06: AdventDay {
     mutating func turn() {
       self = turned
     }
+
+    static prefix func - (direction: Direction) -> Direction {
+      direction.turned.turned
+    }
   }
 
   struct Grid: CustomStringConvertible {
@@ -55,15 +59,26 @@ struct Day06: AdventDay {
       size = (width: width, height: height)
     }
 
-    var startPosition: Position {
+    func position(for lookup: Character) -> Position? {
       for (row, line) in cells.enumerated() {
         for (col, char) in line.enumerated() {
-          if char == "^" {
+          if char == lookup {
             return Position(gridSize: size, row: row, col: col)
           }
         }
       }
-      fatalError("Start position not found")
+      return nil
+    }
+
+    func contains(_ char: Character) -> Bool {
+      position(for: char) != nil
+    }
+
+    var startPosition: Position {
+      guard let start = position(for: "^") else {
+        fatalError("Start position not found")
+      }
+      return start
     }
 
     var description: String {
@@ -81,24 +96,40 @@ struct Day06: AdventDay {
         return
       }
       cells[position.row][position.col] = char
+//      print(description)
     }
   }
 
-  struct Position: CustomStringConvertible {
-    let gridSize: (width: Int, height: Int)
+  struct Position: Equatable, Hashable, CustomStringConvertible {
+    let gridWidth: Int
+    let gridHeight: Int
     var row: Int
     var col: Int
 
+    init(gridSize: (width: Int, height: Int), row: Int, col: Int) {
+      self.gridWidth = gridSize.width
+      self.gridHeight = gridSize.height
+      self.row = row
+      self.col = col
+    }
+
+    init(gridWidth: Int, gridHeight: Int, row: Int, col: Int) {
+      self.gridWidth = gridWidth
+      self.gridHeight = gridHeight
+      self.row = row
+      self.col = col
+    }
+
     var isValid: Bool {
-      row >= 0 && row < gridSize.height && col >= 0 && col < gridSize.width
+      row >= 0 && row < gridHeight && col >= 0 && col < gridWidth
     }
 
     func position(towards direction: Direction) -> Position {
       switch direction {
-      case .north: return Position(gridSize: gridSize, row: row - 1, col: col)
-      case .south: return Position(gridSize: gridSize, row: row + 1, col: col)
-      case .east: return Position(gridSize: gridSize, row: row, col: col + 1)
-      case .west: return Position(gridSize: gridSize, row: row, col: col - 1)
+      case .north: return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row - 1, col: col)
+      case .south: return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row + 1, col: col)
+      case .east: return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row, col: col + 1)
+      case .west: return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row, col: col - 1)
       }
     }
 
@@ -139,85 +170,198 @@ struct Day06: AdventDay {
     return stepCount
   }
 
-  func part2() -> Int {
-    var loopPossibilities = 0
+  func findLoopPossibilities(_ grid: Grid, currentPosition: Position, direction: Direction, backtracking: Bool = false) -> Set<Position> {
+    var blockPositions = Set<Position>()
+    var grid = grid
 
-    var grid = Grid(data: data)
+    guard let char = grid.charAt(position: currentPosition) else {
+      return blockPositions
+    }
+
+//    print(">>> \(currentPosition) \(direction)")
+//    print(grid.description)
+
+    var direction = direction
+    var nextPos = currentPosition.position(towards: direction)
+
+    if backtracking {
+      if char == direction.character {
+        print("🟢 Loop detected at \(currentPosition)!")
+        blockPositions.insert(currentPosition)
+        return blockPositions
+      }
+    } else {
+      // detect a possible loop whenever we cross our path
+      if char == "N" && direction == .west ||
+          char == "W" && direction == .south ||
+          char == "E" && direction == .north ||
+          char == "S" && direction == .east
+      {
+        let blockPosition = currentPosition.position(towards: direction)
+        var tempGrid = grid
+        tempGrid.mark(position: blockPosition, char: "O")
+        tempGrid.mark(position: currentPosition, char: "+")
+//        print(tempGrid.description)
+        print("🟢 Loop is possible!")
+        blockPositions.insert(blockPosition)
+      }
+    }
+
+
+    if char != "#" && char != "O" {
+      grid.mark(position: currentPosition, char: direction.character)
+    }
+
+    while nextPos.isValid && (grid.charAt(position: nextPos) == "#" || grid.charAt(position: nextPos) == "O") {
+      grid.mark(position: currentPosition, char: "+")
+      direction.turn()
+//      print("  => turning \(direction)")
+      nextPos = currentPosition.position(towards: direction)
+    }
+//    print(grid.description)
+
+    if nextPos.isValid {
+      blockPositions = blockPositions.union(findLoopPossibilities(grid, currentPosition: nextPos, direction: direction, backtracking: backtracking))
+
+      if !backtracking &&  grid.charAt(position: nextPos) == "." {
+//        print("trying to backtrack")
+        var tempGrid = grid
+        tempGrid.mark(position: nextPos, char: "O")
+        tempGrid.mark(position: currentPosition, char: "+")
+//        print(tempGrid)
+        if findLoopPossibilities(tempGrid, currentPosition: currentPosition, direction: direction, backtracking: true).isEmpty == false {
+//          print("Loop found while backtracking")
+          blockPositions.insert(nextPos)
+        }
+
+      }
+    }
+
+//    print("🟡 returning \(blockPositions)")
+    return blockPositions
+  }
+
+  func part2() -> Int {
+    let initialGrid = Grid(data: data)
+    var grid = initialGrid
+
+    var blockPositions = Set<Position>()
+    var stepCount = 0
+
     var currentPosition = grid.startPosition
     var direction = Direction.north
 
+    var history = [DirectedPosition]()
+    var visitedPositions = Set<DirectedPosition>()
 
     repeat {
+      let directedPosition = DirectedPosition(position: currentPosition, direction: direction)
+      if visitedPositions.contains(directedPosition) {
+        print("🔴 Infinite Loop detected!")
+        return -1
+      }
+      visitedPositions.insert(directedPosition)
+      history.append(directedPosition)
+
       // Mark current position with X
-      guard let char = grid.charAt(position: currentPosition) else {
-        fatalError("This should not happen: access to invalid position \(currentPosition)")
-      }
-      if char == "." || char == "^" {
-
-        // Check if blocking the next position would cause a loop
-        let blockPosition = currentPosition.position(towards: direction)
-        if blockPosition.isValid && grid.charAt(position: blockPosition) != "#" {
-          print("🟡 Checking for loop")
-          var tempGrid = grid
-          tempGrid.mark(position: blockPosition, char: "O")
-          tempGrid.mark(position: currentPosition, char: "+")
-
-          let tempDirection = direction.turned
-          var tempPosition = currentPosition
-          repeat {
-            tempPosition = tempPosition.position(towards: tempDirection)
-            if tempPosition.isValid {
-              let tempChar = grid.charAt(position: tempPosition)
-              if tempChar == tempDirection.character {
-                print(tempGrid.description)
-                print("🟢 Loop is possible!")
-
-                loopPossibilities += 1
-                break
-              }
-            }
-          } while tempPosition.isValid
-
-          grid.mark(position: currentPosition, char: char)
-        }
-
+      let char = grid.charAt(position: currentPosition)
+      if char != "#" && char != "O" /*&& char != "^"*/ {
         grid.mark(position: currentPosition, char: direction.character)
-
-      } else {
-
-        // detect a possible loop whenever we cross our path
-        if char == "N" && direction == .west ||
-            char == "W" && direction == .south ||
-            char == "E" && direction == .north ||
-            char == "S" && direction == .east
-        {
-          let blockPosition = currentPosition.position(towards: direction)
-          var tempGrid = grid
-          tempGrid.mark(position: blockPosition, char: "O")
-          tempGrid.mark(position: currentPosition, char: "+")
-          print(tempGrid.description)
-          print("🟢 Loop is possible!")
-          loopPossibilities += 1
-        }
+        stepCount += 1
       }
-      // print(">>> \(currentPosition) \(direction)")
-      // print(grid.description)
-
+//      print("\(stepCount) \(currentPosition) \(direction)")
+//      print(grid.description)
+//      try? await Task.sleep(for: .seconds(0.1))
 
       var nextPos = currentPosition.position(towards: direction)
       while nextPos.isValid && grid.charAt(position: nextPos) == "#" {
-        grid.mark(position: currentPosition, char: "+")
         direction.turn()
-        // print("  => turning \(direction)")
+//        print("  => turning \(direction)")
         nextPos = currentPosition.position(towards: direction)
+        grid.mark(position: currentPosition, char: "+")
+//        print("\(stepCount) \(currentPosition) \(direction)")
+//        print(grid.description)
       }
+
       currentPosition = nextPos
     } while currentPosition.isValid
 
-    print("🔴 Leaving grid")
+    print("🔴 Leaving grid at \(currentPosition)", history.count)
+//    print(grid.description)
 
+    struct DirectedPosition: Hashable {
+      let position: Position
+      let direction: Direction
+    }
 
+    var relevantPositions: [DirectedPosition] {
+      var positionSet = Set<DirectedPosition>()
+      return history.filter {
+        if positionSet.contains($0) {
+          return false
+        } else {
+          positionSet.insert($0)
+        }
+        return initialGrid.charAt(position: $0.position) != "^"
+      }
+    }
 
-    return loopPossibilities
+    print("  Processing \(relevantPositions.count) positions..")
+
+    // Backtracking to find more!
+    for (index, lastEntry) in relevantPositions.enumerated() {
+      grid = initialGrid
+      currentPosition = grid.startPosition
+      direction = Direction.north
+      let blockPosition = lastEntry.position
+      //print("🟡 Start testing \(index): \(blockPosition)")
+
+      grid.mark(position: blockPosition, char: "O")
+
+      var visitedPositions = Set<DirectedPosition>()
+
+//      print("\(index) \(currentPosition) \(direction)")
+//      print(grid.description)
+
+      repeat {
+        let directedPosition = DirectedPosition(position: currentPosition, direction: direction)
+
+        if visitedPositions.contains(directedPosition) {
+          blockPositions.insert(blockPosition)
+          //print("🟢 Loop is possible! \(blockPosition)... same position visited before!")
+          break
+        }
+        visitedPositions.insert(directedPosition)
+
+        let char = grid.charAt(position: currentPosition)
+//        if char == direction.character {
+//          blockPositions.insert(blockPosition)
+//          print("🟢 Loop is possible! \(blockPosition) (total \(blockPositions.count))")
+//          break
+//        }
+        if char != "#" && char != "O" {
+          grid.mark(position: currentPosition, char: direction.character)
+        }
+//        print(">>> \(currentPosition) \(direction)")
+//        print(grid.description)
+//        try? await Task.sleep(for: .seconds(0.1))
+
+        var nextPos = currentPosition.position(towards: direction)
+        while nextPos.isValid && (grid.charAt(position: nextPos) == "#" || grid.charAt(position: nextPos) == "O") {
+          direction.turn()
+          //print("\(currentPosition)  => turning \(direction)")
+          nextPos = currentPosition.position(towards: direction)
+          grid.mark(position: currentPosition, char: "+")
+          //try? await Task.sleep(for: .seconds(0.1))
+        }
+
+        currentPosition = nextPos
+      } while currentPosition.isValid
+      //print("🟡 Done testing \(index)")
+      //try? await Task.sleep(for: .seconds(0.1))
+
+    }
+
+    return blockPositions.count
   }
 }
