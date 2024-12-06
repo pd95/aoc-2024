@@ -28,4 +28,14 @@ MXMXAXMASX
     let challenge = Day04(data: testData)
     #expect(String(describing: challenge.part2()) == "9")
   }
+
+  @Test func testRealPart1() async throws {
+    let challenge = Day04()
+    #expect(String(describing: challenge.part1()) == "2530")
+  }
+
+  @Test func testRealPart2() async throws {
+    let challenge = Day04()
+    #expect(String(describing: challenge.part2()) == "1921")
+  }
 }

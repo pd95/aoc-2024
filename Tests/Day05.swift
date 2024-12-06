@@ -47,6 +47,13 @@ struct Day05Tests {
     #expect(String(describing: challenge.part2()) == "123")
   }
 
-  // Result should be 4872 for part1 "Day05.txt"
-  // Result should be 5564 for part2 "Day05.txt"
+  @Test func testRealPart1() async throws {
+    let challenge = Day05()
+    #expect(String(describing: challenge.part1()) == "4872")
+  }
+
+  @Test func testRealPart2() async throws {
+    let challenge = Day05()
+    #expect(String(describing: challenge.part2()) == "5564")
+  }
 }

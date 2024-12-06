@@ -24,4 +24,14 @@ struct Day01Tests {
     let challenge = Day01(data: testData)
     #expect(String(describing: challenge.part2()) == "31")
   }
+
+  @Test func testRealPart1() async throws {
+    let challenge = Day01()
+    #expect(String(describing: challenge.part1()) == "1882714")
+  }
+
+  @Test func testRealPart2() async throws {
+    let challenge = Day01()
+    #expect(String(describing: challenge.part2()) == "19437052")
+  }
 }
