@@ -44,6 +44,46 @@ struct Day06: AdventDay {
     }
   }
 
+  struct Grid: CustomStringConvertible {
+    let size: (width: Int, height: Int)
+    var cells: [[Character]]
+
+    init(data: String) {
+      cells = data.split(separator: "\n").map({ Array(String($0)) })
+      let width = cells[0].count
+      let height = cells.count
+      size = (width: width, height: height)
+    }
+
+    var startPosition: Position {
+      for (row, line) in cells.enumerated() {
+        for (col, char) in line.enumerated() {
+          if char == "^" {
+            return Position(gridSize: size, row: row, col: col)
+          }
+        }
+      }
+      fatalError("Start position not found")
+    }
+
+    var description: String {
+      cells.map { String($0) }.joined(separator: "\n")
+    }
+
+    func charAt(position: Position) -> Character? {
+      if position.isValid == false { return nil }
+      return cells[position.row][position.col]
+    }
+
+    mutating func mark(position: Position, char: Character) {
+      guard position.isValid else {
+        print("can't mark \(position)")
+        return
+      }
+      cells[position.row][position.col] = char
+    }
+  }
+
   struct Position: CustomStringConvertible {
     let gridSize: (width: Int, height: Int)
     var row: Int
@@ -70,37 +110,25 @@ struct Day06: AdventDay {
   func part1() -> Int {
     var stepCount = 0
 
-    var grid = grid
-    let width = grid[0].count
-    let height = grid.count
-    let startPosition = startPosition
-
-    var currentPosition = Position(
-      gridSize: (width: width, height: height),
-      row: startPosition.row,
-      col: startPosition.col
-    )
+    var grid = Grid(data: data)
+    var currentPosition = grid.startPosition
     var direction = Direction.north
-
-    func printGrid() {
-      print(grid.map { String($0) }.joined(separator: "\n"))
-    }
 
     repeat {
       // Mark current position with X
-      let char = grid[currentPosition.row][currentPosition.col]
+      let char = grid.charAt(position: currentPosition)
       if char == "." || char == "^" {
-        grid[currentPosition.row][currentPosition.col] = "X"
+        grid.mark(position: currentPosition, char: "X")
         stepCount += 1
       }
-      //print("\(stepCount) \(currentPosition) \(direction)")
-      //printGrid()
+      // print("\(stepCount) \(currentPosition) \(direction)")
+      // print(grid.description)
 
 
       var nextPos = currentPosition.position(towards: direction)
-      while nextPos.isValid && grid[nextPos.row][nextPos.col] == "#" {
+      while nextPos.isValid && grid.charAt(position: nextPos) == "#" {
         direction.turn()
-        //print("  => turning \(direction)")
+        // print("  => turning \(direction)")
         nextPos = currentPosition.position(towards: direction)
       }
       currentPosition = nextPos
@@ -114,54 +142,46 @@ struct Day06: AdventDay {
   func part2() -> Int {
     var loopPossibilities = 0
 
-    var grid = grid
-    let width = grid[0].count
-    let height = grid.count
-    let startPosition = startPosition
-
-    var currentPosition = Position(
-      gridSize: (width: width, height: height),
-      row: startPosition.row,
-      col: startPosition.col
-    )
+    var grid = Grid(data: data)
+    var currentPosition = grid.startPosition
     var direction = Direction.north
 
-    func printGrid() {
-      print(grid.map { String($0) }.joined(separator: "\n"))
-    }
 
     repeat {
       // Mark current position with X
-      let char = grid[currentPosition.row][currentPosition.col]
+      guard let char = grid.charAt(position: currentPosition) else {
+        fatalError("This should not happen: access to invalid position \(currentPosition)")
+      }
       if char == "." || char == "^" {
 
         // Check if blocking the next position would cause a loop
         let blockPosition = currentPosition.position(towards: direction)
-        if blockPosition.isValid && grid[blockPosition.row][blockPosition.col] != "#" {
-//          let oldChar = grid[blockPosition.row][blockPosition.col]
-//          grid[blockPosition.row][blockPosition.col] = "O"
-//          grid[currentPosition.row][currentPosition.col] = "+"
+        if blockPosition.isValid && grid.charAt(position: blockPosition) != "#" {
+          print("🟡 Checking for loop")
+          var tempGrid = grid
+          tempGrid.mark(position: blockPosition, char: "O")
+          tempGrid.mark(position: currentPosition, char: "+")
 
           let tempDirection = direction.turned
           var tempPosition = currentPosition
           repeat {
             tempPosition = tempPosition.position(towards: tempDirection)
             if tempPosition.isValid {
-              let tempChar = grid[tempPosition.row][tempPosition.col]
+              let tempChar = grid.charAt(position: tempPosition)
               if tempChar == tempDirection.character {
-                //printGrid()
-//                print("🟢 Loop is possible!")
+                print(tempGrid.description)
+                print("🟢 Loop is possible!")
+
                 loopPossibilities += 1
                 break
               }
             }
           } while tempPosition.isValid
 
-//          grid[blockPosition.row][blockPosition.col] = oldChar
-          grid[currentPosition.row][currentPosition.col] = char
+          grid.mark(position: currentPosition, char: char)
         }
 
-        grid[currentPosition.row][currentPosition.col] = direction.character
+        grid.mark(position: currentPosition, char: direction.character)
 
       } else {
 
@@ -171,27 +191,24 @@ struct Day06: AdventDay {
             char == "E" && direction == .north ||
             char == "S" && direction == .east
         {
-//          let blockPosition = currentPosition.position(towards: direction)
-//          let oldChar = grid[blockPosition.row][blockPosition.col]
-//          grid[blockPosition.row][blockPosition.col] = "O"
-//          grid[currentPosition.row][currentPosition.col] = "+"
-//          printGrid()
-//          grid[blockPosition.row][blockPosition.col] = oldChar
-//          grid[currentPosition.row][currentPosition.col] = char
-
-//          print("🟢 Loop is possible!")
+          let blockPosition = currentPosition.position(towards: direction)
+          var tempGrid = grid
+          tempGrid.mark(position: blockPosition, char: "O")
+          tempGrid.mark(position: currentPosition, char: "+")
+          print(tempGrid.description)
+          print("🟢 Loop is possible!")
           loopPossibilities += 1
         }
       }
-//      print(">>> \(currentPosition) \(direction)")
-//      printGrid()
+      // print(">>> \(currentPosition) \(direction)")
+      // print(grid.description)
 
 
       var nextPos = currentPosition.position(towards: direction)
-      while nextPos.isValid && grid[nextPos.row][nextPos.col] == "#" {
-        grid[currentPosition.row][currentPosition.col] = "+"
+      while nextPos.isValid && grid.charAt(position: nextPos) == "#" {
+        grid.mark(position: currentPosition, char: "+")
         direction.turn()
-//        print("  => turning \(direction)")
+        // print("  => turning \(direction)")
         nextPos = currentPosition.position(towards: direction)
       }
       currentPosition = nextPos
