@@ -15,6 +15,7 @@ struct Day04: AdventDay {
   func part1() -> Int {
     var result = 0
 
+    let entities = entities
     let width = entities[0].count
     let height = entities.count
 
@@ -82,6 +83,7 @@ struct Day04: AdventDay {
   func part2() -> Int {
     var result = 0
 
+    let entities = entities
     let width = entities[0].count
     let height = entities.count
 

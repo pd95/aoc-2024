@@ -13,6 +13,7 @@ struct Day01: AdventDay {
 
   // Replace this with your solution for the first part of the day's challenge.
   func part1() -> Int {
+    let entities = entities
     let leftList = entities.map({ $0[0] })
     let rightList = entities.map({ $0[1] })
 
@@ -27,6 +28,7 @@ struct Day01: AdventDay {
 
   // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Int {
+    let entities = entities
     let leftList = entities.map({ $0[0] })
     let rightList = entities.map({ $0[1] }).sorted()
 

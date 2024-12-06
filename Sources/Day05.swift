@@ -30,8 +30,7 @@ struct Day05: AdventDay {
     return allValues
   }
 
-  func identifyInvalidPages(_ update: [Int]) -> [Int:[Int]] {
-    let rules = updateRules
+  func identifyInvalidPages(_ update: [Int], rules: [Int: Set<Int>]) -> [Int:[Int]] {
     var violatingPages = [Int:[Int]]()
     for (index, page) in update.enumerated() {
 
@@ -52,10 +51,12 @@ struct Day05: AdventDay {
 
   func part1() -> Int {
     var result = 0
+    let pageUpdates = pageUpdates
+    let rules = updateRules
 
     // Identify and process all correctly ordered updates and calculate the sum of middle pages
     for update in pageUpdates {
-      let violatingPages = identifyInvalidPages(update)
+      let violatingPages = identifyInvalidPages(update, rules: rules)
       if violatingPages.isEmpty {
         let middleIndex = Int(update.count / 2)
         //print("🟢 valid", update, middleIndex, "=>", update[middleIndex])
@@ -71,10 +72,12 @@ struct Day05: AdventDay {
 
   func part2() -> Int {
     var result = 0
+    let pageUpdates = pageUpdates
+    let rules = updateRules
 
     // Process all incorrect updates, fix them and calculate the sum of middle pages
     for var update in pageUpdates {
-      var violatingPages = identifyInvalidPages(update)
+      var violatingPages = identifyInvalidPages(update, rules: rules)
 
       if violatingPages.isEmpty == false {
         //print("🔴 invalid", update, "due to", violatingPages)
@@ -93,7 +96,7 @@ struct Day05: AdventDay {
             break   // fix only the first violation!
           }
 
-          violatingPages = identifyInvalidPages(update)
+          violatingPages = identifyInvalidPages(update, rules: rules)
         }
         //print("🟢 Fixed update", update, "is valid", violatingPages.isEmpty, violatingPages)
 
