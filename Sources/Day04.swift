@@ -19,29 +19,24 @@ struct Day04: AdventDay {
     let width = entities[0].count
     let height = entities.count
 
-    func findXMAS(_ x: Int, _ y: Int, _ string: Substring, dx: Int, dy: Int, debug: Bool = false) -> Bool {
+    func findXMAS(_ x: Int, _ y: Int, _ string: Substring, dx: Int, dy: Int) -> Bool {
 
       guard x >= 0 && y >= 0 && x < width && y < height else {
-        if debug { print(#function, x, y, string, "🔴") }
         return false
       }
       guard let character = string.first else {
-        if debug { print(#function, x, y, string, "🔴") }
         return false
       }
 
       if entities[y][x] == character {
         let restOfString = string.dropFirst()
         if restOfString.isEmpty {
-          if debug { print(#function, x, y, character, "🟢") }
           return true
         } else {
-          if debug { print(#function, x, y, character, "🟢") }
           let result = findXMAS(x+dx, y+dy, restOfString, dx: dx, dy: dy)
           return result
         }
       }
-      if debug { print(#function, x, y, string, "🔴") }
       return false
     }
 
@@ -87,29 +82,24 @@ struct Day04: AdventDay {
     let width = entities[0].count
     let height = entities.count
 
-    func findMAS(_ x: Int, _ y: Int, _ string: Substring, dx: Int, dy: Int, debug: Bool = false) -> Bool {
+    func findMAS(_ x: Int, _ y: Int, _ string: Substring, dx: Int, dy: Int) -> Bool {
 
       guard x >= 0 && y >= 0 && x < width && y < height else {
-        if debug { print(#function, x, y, string, "🔴") }
         return false
       }
       guard let character = string.first else {
-        if debug { print(#function, x, y, string, "🔴") }
         return false
       }
 
       if entities[y][x] == character {
         let restOfString = string.dropFirst()
         if restOfString.isEmpty {
-          if debug { print(#function, x, y, character, "🟢") }
           return true
         } else {
-          if debug { print(#function, x, y, character, "🟢") }
           let result = findMAS(x+dx, y+dy, restOfString, dx: dx, dy: dy)
           return result
         }
       }
-      if debug { print(#function, x, y, string, "🔴") }
       return false
     }
 

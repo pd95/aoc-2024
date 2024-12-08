@@ -34,14 +34,9 @@ struct Day05: AdventDay {
     var violatingPages = [Int:[Int]]()
     for (index, page) in update.enumerated() {
 
-      //print("page \(page) at \(index)")
       let pagesAfter = rules[page, default: []]
       let before = update[0..<index]
-      //let after = update[(index+1)...]
       let violations = before.filter(pagesAfter.contains(_:))
-      //print("before", before)
-      //print("after", after)
-      //print("violations", violations)
       if !violations.isEmpty {
         violatingPages[page] = violations
       }
@@ -60,10 +55,7 @@ struct Day05: AdventDay {
       let violatingPages = identifyInvalidPages(update, rules: rules)
       if violatingPages.isEmpty {
         let middleIndex = Int(update.count / 2)
-        //print("🟢 valid", update, middleIndex, "=>", update[middleIndex])
         result += update[middleIndex]
-      } else {
-        //print("🔴 invalid", update, "due to", violatingPages)
       }
     }
 
@@ -82,10 +74,8 @@ struct Day05: AdventDay {
       var violatingPages = identifyInvalidPages(update, rules: rules)
 
       if violatingPages.isEmpty == false {
-        //print("🔴 invalid", update, "due to", violatingPages)
         while violatingPages.isEmpty == false {
           for (page, violations) in violatingPages {
-            //print("Resolving", page, "violating", violations)
             let pageIndex = update.firstIndex(of: page)!
             var firstIndex = update.endIndex
             for violation in violations {
@@ -100,7 +90,6 @@ struct Day05: AdventDay {
 
           violatingPages = identifyInvalidPages(update, rules: rules)
         }
-        //print("🟢 Fixed update", update, "is valid", violatingPages.isEmpty, violatingPages)
 
         let middleIndex = Int(update.count / 2)
         result += update[middleIndex]

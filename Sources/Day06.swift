@@ -5,22 +5,11 @@ struct Day06: AdventDay {
   // Save your data in a corresponding text file in the `Data` directory.
   var data: String
 
-  var grid: [[Character]] {
+  private var grid: [[Character]] {
     data.split(separator: "\n").map({ Array(String($0)) })
   }
 
-  var startPosition: (row: Int, col: Int) {
-    for (row, line) in grid.enumerated() {
-      for (col, char) in line.enumerated() {
-        if char == "^" {
-          return (row, col)
-        }
-      }
-    }
-    fatalError("Start position not found")
-  }
-
-  enum Direction: Character {
+  private enum Direction: Character {
     case north = "N"
     case south = "S"
     case east  = "E"
@@ -42,13 +31,9 @@ struct Day06: AdventDay {
     mutating func turn() {
       self = turned
     }
-
-    static prefix func - (direction: Direction) -> Direction {
-      direction.turned.turned
-    }
   }
 
-  struct Grid: CustomStringConvertible {
+  private struct Grid: CustomStringConvertible {
     let size: (width: Int, height: Int)
     var cells: [[Character]]
 
@@ -70,10 +55,6 @@ struct Day06: AdventDay {
       return nil
     }
 
-    func contains(_ char: Character) -> Bool {
-      position(for: char) != nil
-    }
-
     var startPosition: Position {
       guard let start = position(for: "^") else {
         fatalError("Start position not found")
@@ -92,15 +73,13 @@ struct Day06: AdventDay {
 
     mutating func mark(position: Position, char: Character) {
       guard position.isValid else {
-        print("can't mark \(position)")
-        return
+        fatalError("can't mark \(position)")
       }
       cells[position.row][position.col] = char
-//      print(description)
     }
   }
 
-  struct Position: Equatable, Hashable, CustomStringConvertible {
+  private struct Position: Equatable, Hashable, CustomStringConvertible {
     let gridWidth: Int
     let gridHeight: Int
     var row: Int
@@ -153,20 +132,14 @@ struct Day06: AdventDay {
         grid.mark(position: currentPosition, char: "X")
         stepCount += 1
       }
-      // print("\(stepCount) \(currentPosition) \(direction)")
-      // print(grid.description)
-
 
       var nextPos = currentPosition.position(towards: direction)
       while nextPos.isValid && grid.charAt(position: nextPos) == "#" {
         direction.turn()
-        // print("  => turning \(direction)")
         nextPos = currentPosition.position(towards: direction)
       }
       currentPosition = nextPos
     } while currentPosition.isValid
-
-//    print("🔴 Leaving grid")
 
     return stepCount
   }
@@ -189,8 +162,7 @@ struct Day06: AdventDay {
     repeat {
       let directedPosition = DirectedPosition(position: currentPosition, direction: direction)
       if visitedPositions.contains(directedPosition) {
-        print("🔴 Infinite Loop detected!")
-        return -1
+        fatalError("🔴 Infinite Loop detected!")
       }
       visitedPositions.insert(directedPosition)
       history.append(directedPosition)
@@ -201,25 +173,16 @@ struct Day06: AdventDay {
         grid.mark(position: currentPosition, char: direction.character)
         stepCount += 1
       }
-//      print("\(stepCount) \(currentPosition) \(direction)")
-//      print(grid.description)
-//      try? await Task.sleep(for: .seconds(0.1))
 
       var nextPos = currentPosition.position(towards: direction)
       while nextPos.isValid && grid.charAt(position: nextPos) == "#" {
         direction.turn()
-//        print("  => turning \(direction)")
         nextPos = currentPosition.position(towards: direction)
         grid.mark(position: currentPosition, char: "+")
-//        print("\(stepCount) \(currentPosition) \(direction)")
-//        print(grid.description)
       }
 
       currentPosition = nextPos
     } while currentPosition.isValid
-
-//    print("🔴 Leaving grid at \(currentPosition)", history.count)
-//    print(grid.description)
 
     struct DirectedPosition: Hashable {
       let position: Position
@@ -238,60 +201,40 @@ struct Day06: AdventDay {
       }
     }
 
-    print("  Processing \(relevantPositions.count) positions..")
-
     // Backtracking to find more!
-    for (index, lastEntry) in relevantPositions.enumerated() {
+    for lastEntry in relevantPositions {
       grid = initialGrid
       currentPosition = grid.startPosition
       direction = Direction.north
       let blockPosition = lastEntry.position
-      //print("🟡 Start testing \(index): \(blockPosition)")
 
       grid.mark(position: blockPosition, char: "O")
 
       var visitedPositions = Set<DirectedPosition>()
-
-//      print("\(index) \(currentPosition) \(direction)")
-//      print(grid.description)
 
       repeat {
         let directedPosition = DirectedPosition(position: currentPosition, direction: direction)
 
         if visitedPositions.contains(directedPosition) {
           blockPositions.insert(blockPosition)
-          //print("🟢 Loop is possible! \(blockPosition)... same position visited before!")
           break
         }
         visitedPositions.insert(directedPosition)
 
         let char = grid.charAt(position: currentPosition)
-//        if char == direction.character {
-//          blockPositions.insert(blockPosition)
-//          print("🟢 Loop is possible! \(blockPosition) (total \(blockPositions.count))")
-//          break
-//        }
         if char != "#" && char != "O" {
           grid.mark(position: currentPosition, char: direction.character)
         }
-//        print(">>> \(currentPosition) \(direction)")
-//        print(grid.description)
-//        try? await Task.sleep(for: .seconds(0.1))
 
         var nextPos = currentPosition.position(towards: direction)
         while nextPos.isValid && (grid.charAt(position: nextPos) == "#" || grid.charAt(position: nextPos) == "O") {
           direction.turn()
-          //print("\(currentPosition)  => turning \(direction)")
           nextPos = currentPosition.position(towards: direction)
           grid.mark(position: currentPosition, char: "+")
-          //try? await Task.sleep(for: .seconds(0.1))
         }
 
         currentPosition = nextPos
       } while currentPosition.isValid
-      //print("🟡 Done testing \(index)")
-      //try? await Task.sleep(for: .seconds(0.1))
-
     }
 
     return blockPositions.count

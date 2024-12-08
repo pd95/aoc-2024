@@ -27,7 +27,6 @@ struct Day07: AdventDay {
   }
 
   func checkResultPart1(currentResult: Int, expectedResult: Int, numbers: ArraySlice<Int>) -> Bool {
-    //print(#function, currentResult, expectedResult, numbers)
     guard let currentNumber = numbers.first else {
       return currentResult == expectedResult
     }
@@ -50,7 +49,6 @@ struct Day07: AdventDay {
   }
 
   func checkResultPart2(currentResult: Int, expectedResult: Int, numbers: ArraySlice<Int>) -> Bool {
-    //print(#function, currentResult, expectedResult, numbers)
     guard let currentNumber = numbers.first else {
       return currentResult == expectedResult
     }
