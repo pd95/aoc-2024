@@ -32,7 +32,8 @@ struct Day10: AdventDay {
     let mapHeight = map.count
     let mapWidth = map[0].count
     neighbors.forEach { neighbor in
-      guard neighbor.x >= 0 && neighbor.x < mapWidth && neighbor.y >= 0 && neighbor.y < mapHeight else { return }
+      guard neighbor.x >= 0 && neighbor.x < mapWidth && neighbor.y >= 0 && neighbor.y < mapHeight
+      else { return }
       if map[neighbor.y][neighbor.x] == nextLevel {
         endPoints.formUnion(distinctReachableEndpoints(start: neighbor, map: map))
       }
@@ -61,8 +62,7 @@ struct Day10: AdventDay {
     return result
   }
 
-
-  func distinctHikingTrails(trail: [Point],  map: [[Int]]) -> Set<[Point]> {
+  func distinctHikingTrails(trail: [Point], map: [[Int]]) -> Set<[Point]> {
     let start = trail.last!
 
     let height = map[start.y][start.x]
@@ -83,7 +83,8 @@ struct Day10: AdventDay {
     let mapHeight = map.count
     let mapWidth = map[0].count
     neighbors.forEach { neighbor in
-      guard neighbor.x >= 0 && neighbor.x < mapWidth && neighbor.y >= 0 && neighbor.y < mapHeight else { return }
+      guard neighbor.x >= 0 && neighbor.x < mapWidth && neighbor.y >= 0 && neighbor.y < mapHeight
+      else { return }
       if map[neighbor.y][neighbor.x] == nextLevel {
         newTrails.formUnion(distinctHikingTrails(trail: trail + [neighbor], map: map))
       }

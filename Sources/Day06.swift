@@ -12,8 +12,8 @@ struct Day06: AdventDay {
   private enum Direction: Character {
     case north = "N"
     case south = "S"
-    case east  = "E"
-    case west  = "W"
+    case east = "E"
+    case west = "W"
 
     var character: Character {
       self.rawValue
@@ -105,10 +105,14 @@ struct Day06: AdventDay {
 
     func position(towards direction: Direction) -> Position {
       switch direction {
-      case .north: return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row - 1, col: col)
-      case .south: return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row + 1, col: col)
-      case .east: return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row, col: col + 1)
-      case .west: return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row, col: col - 1)
+      case .north:
+        return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row - 1, col: col)
+      case .south:
+        return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row + 1, col: col)
+      case .east:
+        return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row, col: col + 1)
+      case .west:
+        return Position(gridWidth: gridWidth, gridHeight: gridHeight, row: row, col: col - 1)
       }
     }
 
@@ -143,7 +147,6 @@ struct Day06: AdventDay {
 
     return stepCount
   }
-
 
   // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Int {
@@ -227,7 +230,9 @@ struct Day06: AdventDay {
         }
 
         var nextPos = currentPosition.position(towards: direction)
-        while nextPos.isValid && (grid.charAt(position: nextPos) == "#" || grid.charAt(position: nextPos) == "O") {
+        while nextPos.isValid
+          && (grid.charAt(position: nextPos) == "#" || grid.charAt(position: nextPos) == "O")
+        {
           direction.turn()
           nextPos = currentPosition.position(towards: direction)
           grid.mark(position: currentPosition, char: "+")

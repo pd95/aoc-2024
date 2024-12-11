@@ -31,7 +31,6 @@ struct Day11: AdventDay {
     return stones.count
   }
 
-
   // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Int {
     var result = 0

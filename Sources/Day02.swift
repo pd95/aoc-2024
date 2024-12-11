@@ -66,14 +66,14 @@ struct Day02: AdventDay {
 
     for report in entities {
       // Check for an safety error
-      if isReportSafe(report)  {
+      if isReportSafe(report) {
         safeReports += 1
       } else {
 
         // "Brute force" to find which entry to remove
         for i in report.indices {
           // remove entry from report and retry
-          let newReport = Array(report[..<i]+report[(i+1)...])
+          let newReport = Array(report[..<i] + report[(i + 1)...])
           if isReportSafe(newReport) {
             safeReports += 1
             break

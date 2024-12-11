@@ -13,7 +13,7 @@ struct Day09: AdventDay {
     for (index, sizeChar) in diskMapCompact.enumerated() {
       let size = Int(String(sizeChar))!
       if index % 2 == 0 {
-        let fileID = index/2
+        let fileID = index / 2
         diskMap.append(contentsOf: Array(repeating: fileID, count: size))
       } else {
         diskMap.append(contentsOf: Array(repeating: nil, count: size))
@@ -37,7 +37,8 @@ struct Day09: AdventDay {
     }
 
     // Calculate checksum
-    let checksum = diskMap.enumerated().reduce(into: 0) { (checksum: inout Int, entry: (offset: Int, element: Int?)) in
+    let checksum = diskMap.enumerated().reduce(into: 0) {
+      (checksum: inout Int, entry: (offset: Int, element: Int?)) in
       if let value = entry.element {
         checksum += value * entry.offset
       }
@@ -55,7 +56,7 @@ struct Day09: AdventDay {
     for (index, sizeChar) in diskMapCompact.enumerated() {
       let size = Int(String(sizeChar))!
       if index % 2 == 0 {
-        let fileID = index/2
+        let fileID = index / 2
         diskMap.append(contentsOf: Array(repeating: fileID, count: size))
       } else {
         diskMap.append(contentsOf: Array(repeating: nil, count: size))
@@ -67,8 +68,8 @@ struct Day09: AdventDay {
     while lastUsedBlockPointer > diskMap.startIndex {
 
       let fileID = diskMap[lastUsedBlockPointer]!
-      let fileSize = Int(String(diskMapCompact[fileID*2]))!
-      lastUsedBlockPointer = diskMap.index(lastUsedBlockPointer, offsetBy: 1-fileSize)
+      let fileSize = Int(String(diskMapCompact[fileID * 2]))!
+      lastUsedBlockPointer = diskMap.index(lastUsedBlockPointer, offsetBy: 1 - fileSize)
 
       // Find free space for this file
       var freeBlockPointer = diskMap.firstIndex(of: nil)!
@@ -79,7 +80,7 @@ struct Day09: AdventDay {
           freeSpace += 1
           freeBlockPointer += 1
         }
-        if freeSpace >= fileSize{
+        if freeSpace >= fileSize {
           // enough space?
           break
         }
@@ -99,13 +100,16 @@ struct Day09: AdventDay {
         lastUsedBlockPointer = diskMap.index(lastUsedBlockPointer, offsetBy: -fileSize)
       }
 
-      while lastUsedBlockPointer > diskMap.startIndex && (diskMap[lastUsedBlockPointer] == nil || diskMap[lastUsedBlockPointer]! >= fileID) {
+      while lastUsedBlockPointer > diskMap.startIndex
+        && (diskMap[lastUsedBlockPointer] == nil || diskMap[lastUsedBlockPointer]! >= fileID)
+      {
         lastUsedBlockPointer -= 1
       }
     }
 
     // Calculate checksum
-    let checksum = diskMap.enumerated().reduce(into: 0) { (checksum: inout Int, entry: (offset: Int, element: Int?)) in
+    let checksum = diskMap.enumerated().reduce(into: 0) {
+      (checksum: inout Int, entry: (offset: Int, element: Int?)) in
       if let value = entry.element {
         checksum += value * entry.offset
       }

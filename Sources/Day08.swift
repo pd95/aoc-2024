@@ -16,8 +16,8 @@ struct Day08: AdventDay {
     let antennas = Set(data.filter({ $0.isNumber || $0.isLetter }))
 
     func isInGrid(_ position: Position) -> Bool {
-      position.row >= 0 && position.row < gridSize.height &&
-      position.col >= 0 && position.col < gridSize.width
+      position.row >= 0 && position.row < gridSize.height && position.col >= 0
+        && position.col < gridSize.width
     }
 
     var antennaPositions: [Character: [Position]] = [:]
@@ -38,12 +38,12 @@ struct Day08: AdventDay {
         let deltaRow = second.row - first.row
         let deltaCol = second.col - first.col
 
-        var antinodePos = Position(row: first.row-deltaRow, col: first.col-deltaCol)
+        var antinodePos = Position(row: first.row - deltaRow, col: first.col - deltaCol)
         if isInGrid(antinodePos) {
           antinodePositions.insert(antinodePos)
         }
 
-        antinodePos = Position(row: second.row+deltaRow, col: second.col+deltaCol)
+        antinodePos = Position(row: second.row + deltaRow, col: second.col + deltaCol)
         if isInGrid(antinodePos) {
           antinodePositions.insert(antinodePos)
         }
@@ -60,8 +60,8 @@ struct Day08: AdventDay {
     let antennas = Set(data.filter({ $0.isNumber || $0.isLetter }))
 
     func isInGrid(_ position: Position) -> Bool {
-      position.row >= 0 && position.row < gridSize.height &&
-      position.col >= 0 && position.col < gridSize.width
+      position.row >= 0 && position.row < gridSize.height && position.col >= 0
+        && position.col < gridSize.width
     }
 
     var antennaPositions: [Character: [Position]] = [:]
@@ -84,16 +84,16 @@ struct Day08: AdventDay {
         let deltaRow = second.row - first.row
         let deltaCol = second.col - first.col
 
-        var antinodePos = Position(row: first.row-deltaRow, col: first.col-deltaCol)
+        var antinodePos = Position(row: first.row - deltaRow, col: first.col - deltaCol)
         while isInGrid(antinodePos) {
           antinodePositions.insert(antinodePos)
-          antinodePos = Position(row: antinodePos.row-deltaRow, col: antinodePos.col-deltaCol)
+          antinodePos = Position(row: antinodePos.row - deltaRow, col: antinodePos.col - deltaCol)
         }
 
-        antinodePos = Position(row: second.row+deltaRow, col: second.col+deltaCol)
+        antinodePos = Position(row: second.row + deltaRow, col: second.col + deltaCol)
         while isInGrid(antinodePos) {
           antinodePositions.insert(antinodePos)
-          antinodePos = Position(row: antinodePos.row+deltaRow, col: antinodePos.col+deltaCol)
+          antinodePos = Position(row: antinodePos.row + deltaRow, col: antinodePos.col + deltaCol)
         }
       }
     }

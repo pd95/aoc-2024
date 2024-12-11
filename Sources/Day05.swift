@@ -30,8 +30,8 @@ struct Day05: AdventDay {
     return allValues
   }
 
-  func identifyInvalidPages(_ update: [Int], rules: [Int: Set<Int>]) -> [Int:[Int]] {
-    var violatingPages = [Int:[Int]]()
+  func identifyInvalidPages(_ update: [Int], rules: [Int: Set<Int>]) -> [Int: [Int]] {
+    var violatingPages = [Int: [Int]]()
     for (index, page) in update.enumerated() {
 
       let pagesAfter = rules[page, default: []]
@@ -85,7 +85,7 @@ struct Day05: AdventDay {
               }
             }
             update.swapAt(firstIndex, pageIndex)
-            break   // fix only the first violation!
+            break  // fix only the first violation!
           }
 
           violatingPages = identifyInvalidPages(update, rules: rules)

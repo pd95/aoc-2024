@@ -33,7 +33,7 @@ struct Day04: AdventDay {
         if restOfString.isEmpty {
           return true
         } else {
-          let result = findXMAS(x+dx, y+dy, restOfString, dx: dx, dy: dy)
+          let result = findXMAS(x + dx, y + dy, restOfString, dx: dx, dy: dy)
           return result
         }
       }
@@ -45,28 +45,28 @@ struct Day04: AdventDay {
         if entities[y][x] != "X" { continue }
 
         if findXMAS(x, y, "XMAS", dx: 1, dy: 0) {
-          result += 1   // 3
+          result += 1  // 3
         }
         if findXMAS(x, y, "XMAS", dx: 0, dy: 1) {
-          result += 1   // 1
+          result += 1  // 1
         }
         if findXMAS(x, y, "XMAS", dx: -1, dy: 0) {
-          result += 1   // 2
+          result += 1  // 2
         }
         if findXMAS(x, y, "XMAS", dx: 0, dy: -1) {
-          result += 1   // 2
+          result += 1  // 2
         }
         if findXMAS(x, y, "XMAS", dx: 1, dy: 1) {
-          result += 1   // 1
+          result += 1  // 1
         }
         if findXMAS(x, y, "XMAS", dx: -1, dy: 1) {
-          result += 1   // 1
+          result += 1  // 1
         }
         if findXMAS(x, y, "XMAS", dx: 1, dy: -1) {
-          result += 1   // 4
+          result += 1  // 4
         }
         if findXMAS(x, y, "XMAS", dx: -1, dy: -1) {
-          result += 1   // 4
+          result += 1  // 4
         }
       }
     }
@@ -96,7 +96,7 @@ struct Day04: AdventDay {
         if restOfString.isEmpty {
           return true
         } else {
-          let result = findMAS(x+dx, y+dy, restOfString, dx: dx, dy: dy)
+          let result = findMAS(x + dx, y + dy, restOfString, dx: dx, dy: dy)
           return result
         }
       }
@@ -110,29 +110,29 @@ struct Day04: AdventDay {
         //  M.M
         //  .A.
         //  S.S
-        if findMAS(x, y, "MAS", dx: 1, dy: 1) && findMAS(x+2, y, "MAS", dx: -1, dy: 1) {
-          result += 1   // 1
+        if findMAS(x, y, "MAS", dx: 1, dy: 1) && findMAS(x + 2, y, "MAS", dx: -1, dy: 1) {
+          result += 1  // 1
         }
 
         //  M.S
         //  .A.
         //  M.S
-        if findMAS(x, y, "MAS", dx: 1, dy: 1) && findMAS(x, y+2, "MAS", dx: 1, dy: -1) {
-          result += 1   // 3
+        if findMAS(x, y, "MAS", dx: 1, dy: 1) && findMAS(x, y + 2, "MAS", dx: 1, dy: -1) {
+          result += 1  // 3
         }
 
         //  S.S
         //  .A.
         //  M.M
-        if findMAS(x, y, "MAS", dx: 1, dy: -1) && findMAS(x+2, y, "MAS", dx: -1, dy: -1) {
-          result += 1   // 4
+        if findMAS(x, y, "MAS", dx: 1, dy: -1) && findMAS(x + 2, y, "MAS", dx: -1, dy: -1) {
+          result += 1  // 4
         }
 
         //  S.M
         //  .A.
         //  S.M
-        if findMAS(x, y, "MAS", dx: -1, dy: 1) && findMAS(x, y+2, "MAS", dx: -1, dy: -1) {
-          result += 1   // 1
+        if findMAS(x, y, "MAS", dx: -1, dy: 1) && findMAS(x, y + 2, "MAS", dx: -1, dy: -1) {
+          result += 1  // 1
         }
       }
     }
