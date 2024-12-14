@@ -8,7 +8,8 @@ struct Day13: AdventDay {
   func part1() -> Int {
     var result = 0
 
-    let regex = /Button A: X\+(?<buttonAX>\d+), Y\+(?<buttonAY>\d+)\nButton B: X\+(?<buttonBX>\d+), Y\+(?<buttonBY>\d+)\nPrize: X=(?<prizeX>\d+), Y=(?<prizeY>\d+)/
+    let regex =
+      /Button A: X\+(?<buttonAX>\d+), Y\+(?<buttonAY>\d+)\nButton B: X\+(?<buttonBX>\d+), Y\+(?<buttonBY>\d+)\nPrize: X=(?<prizeX>\d+), Y=(?<prizeY>\d+)/
 
     var startRange = data.startIndex
     while let match = try? regex.firstMatch(in: data[startRange...]) {
@@ -29,7 +30,7 @@ struct Day13: AdventDay {
           let positionX = aTapCount * buttonAX + bTapCount * buttonBX
           let positionY = aTapCount * buttonAY + bTapCount * buttonBY
           if positionX == priceX && positionY == priceY {
-            foundMatch = (aTapCount, bTapCount, aTapCount*3 + bTapCount*1)
+            foundMatch = (aTapCount, bTapCount, aTapCount * 3 + bTapCount * 1)
             break
           }
         }
@@ -48,8 +49,8 @@ struct Day13: AdventDay {
       if let bestMatch {
         //print(bestMatch)
         result += bestMatch.cost
-      //} else {
-      //  print("No solution found")
+        //} else {
+        //  print("No solution found")
       }
     }
 
@@ -60,20 +61,20 @@ struct Day13: AdventDay {
   func part2() -> Int {
     var result = 0
 
-    let regex = /Button A: X\+(?<buttonAX>\d+), Y\+(?<buttonAY>\d+)\nButton B: X\+(?<buttonBX>\d+), Y\+(?<buttonBY>\d+)\nPrize: X=(?<prizeX>\d+), Y=(?<prizeY>\d+)/
+    let regex =
+      /Button A: X\+(?<buttonAX>\d+), Y\+(?<buttonAY>\d+)\nButton B: X\+(?<buttonBX>\d+), Y\+(?<buttonBY>\d+)\nPrize: X=(?<prizeX>\d+), Y=(?<prizeY>\d+)/
 
     var startRange = data.startIndex
     while let match = try? regex.firstMatch(in: data[startRange...]) {
       //print("\n\n\(match.output.0)\n")
       startRange = match.range.upperBound
 
-      let priceX = Int(match.output.prizeX)!+10000000000000
-      let priceY = Int(match.output.prizeY)!+10000000000000
+      let priceX = Int(match.output.prizeX)! + 10_000_000_000_000
+      let priceY = Int(match.output.prizeY)! + 10_000_000_000_000
       let buttonAX = Int(match.output.buttonAX)!
       let buttonAY = Int(match.output.buttonAY)!
       let buttonBX = Int(match.output.buttonBX)!
       let buttonBY = Int(match.output.buttonBY)!
-
 
       /*
        We have to solve the following equations to determine the aTapCount and bTapCount
@@ -93,8 +94,8 @@ struct Day13: AdventDay {
         if aTapCount == Double(Int(aTapCount)) && bTapCount == Double(Int(bTapCount)) {
           //print("aTapCount: \(aTapCount), bTapCount: \(bTapCount)")
           result += Int(aTapCount) * 3 + Int(bTapCount)
-        //} else {
-        //  print("no solution")
+          //} else {
+          //  print("no solution")
         }
       }
     }
