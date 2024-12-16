@@ -52,21 +52,21 @@ struct Day16Tests {
     #expect(String(describing: challenge.part1()) == "11048")
   }
 
-//  @Test func testRealPart1() async throws {
-//    let challenge = Day16()
-//    #expect(String(describing: challenge.part1()) == "1568399")
-//  }
-//
-//  @Test func testPart2() async throws {
-//    let challenge = Day16(data: testData)
-//    #expect(String(describing: challenge.part2()) == "1751")
-//  }
-//
-//  @Test func test2Part2() async throws {
-//    let challenge = Day16(data: testData2)
-//    #expect(String(describing: challenge.part2()) == "9021")
-//  }
-//
+  @Test func testRealPart1() async throws {
+    let challenge = Day16()
+    #expect(String(describing: challenge.part1()) == "73432")
+  }
+
+  @Test func testPart2() async throws {
+    let challenge = Day16(data: testData)
+    #expect(String(describing: challenge.part2()) == "45")
+  }
+
+  @Test func test2Part2() async throws {
+    let challenge = Day16(data: testData2)
+    #expect(String(describing: challenge.part2()) == "64")
+  }
+
 //  @Test func testRealPart2() async throws {
 //    let challenge = Day16()
 //    #expect(String(describing: challenge.part2()) == "1575877")
