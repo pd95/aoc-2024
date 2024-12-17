@@ -24,7 +24,7 @@ struct Day16: AdventDay {
     var description: String { "(\(x), \(y))" }
   }
 
-  enum Direction: Character {
+  enum Direction: Character, CustomStringConvertible {
     case north = "^"
     case south = "v"
     case east = ">"
@@ -56,6 +56,8 @@ struct Day16: AdventDay {
       case .west: return .north
       }
     }
+
+    var description: String { String(rawValue) }
   }
 
   // Replace this with your solution for the first part of the day's challenge.
@@ -135,6 +137,61 @@ struct Day16: AdventDay {
     return result
   }
 
+  struct BitGrid {
+    var grid: [BitArray]
+
+    init(width: Int, height: Int) {
+      grid = Array(repeating: BitArray(repeating: false, count: width), count: height)
+    }
+
+    mutating func merge(with other: BitGrid) {
+      for (y, row) in other.grid.enumerated() {
+        for (x, bit) in row.enumerated() {
+          if bit {
+            grid[y][x] = true
+          }
+        }
+      }
+    }
+
+    mutating func visit(at point: Point) {
+      grid[point.y][point.x] = true
+    }
+
+    func visited(at point: Point) -> BitGrid {
+      var newGrid = self
+      newGrid.grid[point.y][point.x] = true
+      return newGrid
+    }
+
+    func isVisited(at point: Point) -> Bool {
+      grid[point.y][point.x]
+    }
+
+    var points: Set<Point> {
+      var visitedPoints = Set<Point>()
+      for (y, row) in grid.enumerated() {
+        for (x, bit) in row.enumerated() {
+          if bit {
+            visitedPoints.insert(Point(x: x, y: y))
+          }
+        }
+      }
+      return visitedPoints
+    }
+
+    func print(_ charGrid: [[Character]]? = nil) -> String {
+      var chars = [Character]()
+      for (y, row) in grid.enumerated() {
+        for (x, bit) in row.enumerated() {
+          chars.append(bit ? "O" : (charGrid?[y][x] ?? "."))
+        }
+        chars.append("\n")
+      }
+      return String(chars)
+    }
+  }
+
   // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Int {
     var result = 0
@@ -163,8 +220,10 @@ struct Day16: AdventDay {
       }
     }
 
-    var nextCheck = [(point: Point, direction: Direction, points: Set<Point>, score: Int)]()
-    nextCheck.append((start, .east, Set(), 0))
+    let bitGrid = BitGrid(width: grid[0].count, height: grid.count).visited(at: start)
+
+    var nextCheck = [(point: Point, direction: Direction, grid: BitGrid, score: Int)]()
+    nextCheck.append((start, .east, bitGrid, 0))
 
     //print("Grid")
     //print(grid.map { String($0) }.joined(separator: "\n"))
@@ -193,13 +252,13 @@ struct Day16: AdventDay {
         if grid[point.y][point.x] == "E" {
           if result == 0 {
             print("First reached end with score \(score)")
-            print(count, point, score, visitedPoints.count)
+            print(count, point, score, visitedPoints.points.count)
             result = score
-            allBestPathPoints.formUnion(visitedPoints)
+            allBestPathPoints.formUnion(visitedPoints.points)
           } else if score == result {
             print("Reached end with same score \(score)")
-            print(count, point, score, visitedPoints.count)
-            allBestPathPoints.formUnion(visitedPoints)
+            print(count, point, score, visitedPoints.points.count)
+            allBestPathPoints.formUnion(visitedPoints.points)
           } else {
             print(score, "score is higher than previous result \(result)")
           }
@@ -207,21 +266,33 @@ struct Day16: AdventDay {
 
           var direction = direction
           var next = point.next(direction)
-          if grid[next.y][next.x] != "#" && visitedPoints.contains(next) == false {
-            let newScore = (point: next, direction: direction, points: visitedPoints.union([point]), score: score + 1)
-            nextCheck.append(newScore)
+          if grid[next.y][next.x] != "#" && visitedPoints.isVisited(at: next) == false {
+            let newScore = (point: next, direction: direction, grid: visitedPoints.visited(at: point), score: score + 1)
+            if let index = nextCheck.firstIndex(where: { $0.point == newScore.point && $0.score == newScore.score && $0.direction == newScore.direction }) {
+              nextCheck[index].grid.merge(with: newScore.grid)
+            } else {
+              nextCheck.append(newScore)
+            }
           }
           direction = direction.left()
           next = point.next(direction)
-          if grid[next.y][next.x] != "#" && visitedPoints.contains(next) == false {
-            let newScore = (point: next, direction: direction, points: visitedPoints.union([point]), score: score + 1001)
-            nextCheck.append(newScore)
+          if grid[next.y][next.x] != "#" && visitedPoints.isVisited(at: next) == false {
+            let newScore = (point: next, direction: direction, grid: visitedPoints.visited(at: point), score: score + 1001)
+            if let index = nextCheck.firstIndex(where: { $0.point == newScore.point && $0.score == newScore.score && $0.direction == newScore.direction }) {
+              nextCheck[index].grid.merge(with: newScore.grid)
+            } else {
+              nextCheck.append(newScore)
+            }
           }
           direction = direction.opposite()
           next = point.next(direction)
-          if grid[next.y][next.x] != "#" && visitedPoints.contains(next) == false {
-            let newScore = (point: next, direction: direction, points: visitedPoints.union([point]), score: score + 1001)
-            nextCheck.append(newScore)
+          if grid[next.y][next.x] != "#" && visitedPoints.isVisited(at: next) == false {
+            let newScore = (point: next, direction: direction, grid: visitedPoints.visited(at: point), score: score + 1001)
+            if let index = nextCheck.firstIndex(where: { $0.point == newScore.point && $0.score == newScore.score && $0.direction == newScore.direction }) {
+              nextCheck[index].grid.merge(with: newScore.grid)
+            } else {
+              nextCheck.append(newScore)
+            }
           }
         }
       }
@@ -233,12 +304,6 @@ struct Day16: AdventDay {
       nextCheck.removeAll(where: { $0.score == minScore })
       count += 1
     }
-
-//    print(allBestPathPoints)
-//    for point in allBestPathPoints {
-//      grid[point.y][point.x] = "O"
-//    }
-//    print(grid.map { String($0) }.joined(separator: "\n"))
 
     return allBestPathPoints.count
   }
