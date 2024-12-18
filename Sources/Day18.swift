@@ -185,24 +185,12 @@ struct Day18: AdventDay {
       return grid
     }
 
-    //print("Grid")
-    //print(grid.map { String($0) }.joined(separator: "\n"))
+    // Use binary search implemented in Swift Algorithms package!
+    let badIndex = coordinates.indices.partitioningIndex(where: { index in
+      findPath(start: start, in: gridWithObstacles(grid, at: coordinates[...index])).isEmpty
+    })
 
-    var goodState = lineCount
-    var badState = coordinates.count - 1
-
-    while (badState - goodState) > 1 {
-      let midState = (badState - goodState) / 2 + goodState
-
-      let path = findPath(start: start, in: gridWithObstacles(grid, at: coordinates[..<midState]))
-      if path.isEmpty {
-        badState = midState
-      } else {
-        goodState = midState
-      }
-    }
-
-    let badPoint = coordinates[badState - 1]
+    let badPoint = coordinates[badIndex]
 
     return "\(badPoint.x),\(badPoint.y)"
   }
