@@ -109,10 +109,23 @@ struct Day17: AdventDay {
     return state.output
   }
 
+  enum Part2State: Equatable {
+    case identifyProgramLength
+    case findingA(base: Int, bitmask: Int, matchingParts: Int)
+    case foundBestSolution(Int)
+
+    var foundBestSolution: Bool {
+      switch self {
+      case .foundBestSolution: return true
+      default: return false
+      }
+    }
+  }
+
 
   // Replace this with your solution for the second part of the day's challenge.
   func part2() -> String {
-
+    var result = ""
     var state = MachineState()
 
     let regex = /Register (?<register>[A-C]): (?<value>\d+)|Program: (?<program>[0-9,]+)/
@@ -134,96 +147,109 @@ struct Day17: AdventDay {
     }
 
     let initialState = state
-    var lowerBound = 0.0
-    var upperBound = Double(Int.max)
-    var a = lowerBound
-    if state.registers[.a] == 59397658 {
-      //                      2,4,1,1,7,5,4,6,1,4,0,3,5,5,3,0
-      a = 203687564539236  // 2,4,5,0,1,0,0,4,4,3,7,5,5,1,3,0
-      a = 207687564539236  // 2,4,5,4,6,1,5,0,2,5,5,1,4,5,2,0
-      a = 200000000000000  // 5,5,5,5,1,5,3,6,5,7,1,2,5,4,2,0
-      a = 205049100000000  // 5,5,5,5,1,5,3,6,5,7,1,2,5,4,2,0
-      lowerBound = a
-    }
 
-    func testOutputLength(_ a: Double) -> Int {
+    @discardableResult
+    func execute(_ a: Int) -> Bool {
       state = initialState
       state.registers[.a] = Int(a)
       
       while state.isValidPointer {
         state.execute()
       }
-      
-      return state.output.count
+      //print("-", String(a, radix: 8), state.output, state.output.count == programCodeLength)
+      //print("+", String(a, radix: 8), programCode)
+      if state.output == programCode {
+        print("🟢 found solution for part 2: \(a)")
+        return true
+      }
+      return false
     }
 
     // optimize to find lower bound where program code matches
-    var programCodeLength = programCode.count
-    var outputLengthMatches = false
-    while true {
-      state = initialState
-      print(a)
-      state.registers[.a] = Int(a)
+    let programCodeLength = programCode.count
+    let programCodeReversed = Int(programCode.split(separator: ",").reversed().joined())!
 
-      while state.isValidPointer {
-        state.execute()
-      }
+    var processState = Part2State.identifyProgramLength
+    var a = 1  // state.registers[.a]!
+    while result.isEmpty {
+      switch processState {
+      case.identifyProgramLength:
+        execute(a)
+        if state.output.count < programCodeLength {
+          //print("output too short")
+          a = a << 1
+        } else if state.output.count > programCodeLength {
+          //print("output too long")
+          a = a >> 1
+        } else {
 
-      print(state.output)
-      print(programCode)
-      //return "done"
-      if state.output.count > programCodeLength {
-        print("output too long")
-        upperBound = a
-        a = (upperBound-lowerBound) / 2
-        outputLengthMatches = false
-      }
-      else if state.output.count < programCodeLength {
-        print("output too short")
-        lowerBound = a
-        a = (upperBound-lowerBound) / 2
-        outputLengthMatches = false
-      } else {
-        print(programCode)
-
-        if state.output == programCode {
-          print("matches program")
-          return String(Int(a))
-        }
-
-        if outputLengthMatches == false {
-          outputLengthMatches = true
-          //print(lowerBound, upperBound)
-          while true {
-            let lowerBoundLength = testOutputLength(lowerBound)
-            if lowerBoundLength == programCodeLength {
+          var lowerBound = a >> 1
+          var upperBound = a
+          while (upperBound - lowerBound) > 1 {
+            a = (lowerBound + upperBound + 1) / 2
+            //print("Checking \(String(a, radix: 8))")
+            if execute(a) {
               break
-            } else if lowerBoundLength < programCodeLength {
-              lowerBound = (a - lowerBound) / 2
+            }
+            if state.output.count < programCodeLength {
+              lowerBound = a
+            } else {
+              upperBound = a
             }
           }
-          a = lowerBound
-        } else {
-          a += 1
+          processState = .findingA(base: 0, bitmask: upperBound<<3, matchingParts: 0)
         }
 
-//        let outputReversed = state.output.split(separator: ",").reversed().joined()
-//        let programReversed = programCode.split(separator: ",").reversed().joined()
-//        if outputReversed < programReversed {
-//          print("output value too low")
-//          lowerBound = a + 1
-//        } else if outputReversed > programReversed {
-//          print("output value too big")
-//          upperBound = a - 1
-//        } else {
-//          a += 10
-//        }
-//        print(outputReversed, programReversed)
+      case .findingA(var base, var bitmask, var matchingParts):
+        //print("finding A")
+        let upperBound = bitmask << 4
 
+        while matchingParts < programCodeLength && !processState.foundBestSolution {
+          for b in 0...7 {
+            a = upperBound + base + b*bitmask
+            //print("base: \(String(base, radix: 8)), bitmask: \(String(bitmask, radix: 8)) a: \(String(a, radix: 8))")
+            execute(a)
+
+            let outputIndex: String.Index = state.output.index(state.output.startIndex, offsetBy: max(0, programCodeLength - matchingParts - 1 - 1))
+            let outputEndIndex: String.Index = state.output.index(state.output.startIndex, offsetBy: max(0, programCodeLength - 1))
+            let outputPart = state.output[outputIndex...outputEndIndex]
+            let programIndex: String.Index = programCode.index(programCode.startIndex, offsetBy: max(0, programCodeLength - matchingParts - 1 - 1))
+            let programPart = programCode[programIndex...]
+            //print(outputPart, programPart, programPart == outputPart, programPart == outputPart ? "🟢" : "")
+
+            if outputPart == programPart {
+              base += b*bitmask
+              matchingParts += 2
+              //print("found valid part! new base \(String(base, radix: 8))")
+              break
+            }
+          }
+
+          bitmask >>= 3
+          //print("new bitmask \(String(bitmask, radix: 8))")
+
+          if bitmask <= 1 {
+            //print("Finished bitshifting... start iterating as of \(String(base, radix: 8))")
+            for i in 0..<upperBound {
+              a = base + i
+              //print("a = \(String(a, radix: 8))", a)
+              if execute(a) {
+                //print("Found solution using \(base+i)")
+                processState = .foundBestSolution(base+i)
+                break
+              }
+            }
+
+            //fatalError("Unexpected 0 bitmask")
+          }
+        }
+
+      case .foundBestSolution(let a):
+        print("🟢 returning solution \(a)")
+        result = String(a)
       }
-
     }
 
-    return ""
+    return result
   }
 }
