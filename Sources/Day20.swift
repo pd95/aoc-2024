@@ -55,6 +55,7 @@ struct Day20: AdventDay {
         //print("end at \(end)")
       }
     }
+    let initialGrid = grid
 
     assert(start != Point(x: 0, y: 0))
     assert(start != end)
@@ -84,7 +85,9 @@ struct Day20: AdventDay {
     var regularPath: [Point] = []
     var regularPathLength = 0
 
-    func calcRegularPathLength(point: Point, length: Int = 0) {
+    var futureLoop: [(point: Point, length: Int)] = [(start, 0)]
+    while futureLoop.isEmpty == false {
+      let (point, length) = futureLoop.removeFirst()
 
       // register distance
       distanceFromStart[point] = length
@@ -92,31 +95,29 @@ struct Day20: AdventDay {
 
       if point == end {
         regularPathLength = length
+        print("Reached end! \(regularPathLength)")
       }
 
       grid[point.y][point.x] = "o"
-      defer { grid[point.y][point.x] = "." }
+      //defer { grid[point.y][point.x] = "." }
 
       if let next = accessiblePoint(point.left) {
-        print("left")
-        calcRegularPathLength(point: next, length: length + 1)
+        futureLoop.append( (next, length + 1) )
       }
       if let next = accessiblePoint(point.up) {
-        print("up")
-        calcRegularPathLength(point: next, length: length + 1)
+        futureLoop.append( (next, length + 1) )
       }
       if let next = accessiblePoint(point.right) {
-        print("right")
-        calcRegularPathLength(point: next, length: length + 1)
+        futureLoop.append( (next, length + 1) )
       }
       if let next = accessiblePoint(point.down) {
-        print("down")
-        calcRegularPathLength(point: next, length: length + 1)
+        futureLoop.append( (next, length + 1) )
       }
     }
 
-    calcRegularPathLength(point: start)
     printGrid()
+
+    grid = initialGrid
 
     for point in regularPath {
       let regularDistance = distanceFromStart[point]!
