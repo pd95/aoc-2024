@@ -163,7 +163,6 @@ struct Day18: AdventDay {
   func part2() -> String {
     let lines = data.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: .newlines)
     let size = lines.count < 1024 ? 7 : 71
-    let lineCount = lines.count < 1024 ? 12 : 1024
 
     let start = Point(x: 0, y: 0)
     var grid = Array(repeating: [Character](repeating: ".", count: size), count: size)

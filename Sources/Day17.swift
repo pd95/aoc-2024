@@ -167,7 +167,6 @@ struct Day17: AdventDay {
 
     // optimize to find lower bound where program code matches
     let programCodeLength = programCode.count
-    let programCodeReversed = Int(programCode.split(separator: ",").reversed().joined())!
 
     var processState = Part2State.identifyProgramLength
     var a = 1  // state.registers[.a]!
