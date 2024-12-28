@@ -90,16 +90,6 @@ struct Day21: AdventDay {
       return validDirections
     }
 
-    func costForSequence(_ sequence: String, start pointer: Position) -> Int {
-      var pointer = pointer
-      return sequence.reduce(0) { cost, char in
-        let position = position(for: char)
-        let moveCost = pointer.distance(to: position)
-        pointer = position
-        return cost + moveCost
-      }
-    }
-
     static var numericKeypad: KeypadRobot {
       KeypadRobot(layout: [
         ["7", "8", "9"],
