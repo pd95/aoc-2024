@@ -90,6 +90,22 @@ struct Day21: AdventDay {
       return validDirections
     }
 
+    mutating func move(sequence: String) -> [String] {
+      var nextCommands = [""]
+      for char in sequence {
+        // Calculate possible directions for movement
+        let commands = self.move(to: char)
+
+        // Combine new solutions with existing
+        nextCommands = commands.flatMap { possibility in
+          nextCommands.map {
+            $0 + possibility + "A"
+          }
+        }
+      }
+      return nextCommands
+    }
+
     static var numericKeypad: KeypadRobot {
       KeypadRobot(layout: [
         ["7", "8", "9"],
@@ -119,18 +135,7 @@ struct Day21: AdventDay {
       var complexity = 0
       var shortestPathLength = Int.max
 
-      var numDirections = [""]
-      for char in line {
-        // Calculate possible directions for movement
-        let directionPossibilities = numpadRobot.move(to: char)
-
-        // Combine new solutions with existing
-        numDirections = directionPossibilities.flatMap { possibility in
-          numDirections.map {
-            $0 + possibility + "A"
-          }
-        }
-      }
+      let numDirections = numpadRobot.move(sequence: String(line))
 
       print(numDirections.map({ ($0.count, $0) }), numDirections.count, line)
       print("-----")
@@ -140,18 +145,7 @@ struct Day21: AdventDay {
         print(numpadSolution)
 
         var directionalKeypad = KeypadRobot.directionalKeypad
-        var cursorDirections = [""]
-        for char in numpadSolution {
-          // Calculate possible directions for movement
-          let directionPossibilities = directionalKeypad.move(to: char)
-
-          // Combine new solutions with existing
-          cursorDirections = directionPossibilities.flatMap { possibility in
-            cursorDirections.map {
-              $0 + possibility + "A"
-            }
-          }
-        }
+        let cursorDirections = directionalKeypad.move(sequence: numpadSolution)
 
         print(cursorDirections.map({ ($0.count, $0) }), cursorDirections.count, line)
         print("-----")
@@ -163,18 +157,7 @@ struct Day21: AdventDay {
           print(cursorDirection)
 
           var directionalKeypad2 = KeypadRobot.directionalKeypad
-          var cursorDirections2 = [""]
-          for char in cursorDirection {
-            // Calculate possible directions for movement
-            let directionPossibilities = directionalKeypad2.move(to: char)
-
-            // Combine new solutions with existing
-            cursorDirections2 = directionPossibilities.flatMap { possibility in
-              cursorDirections2.map {
-                $0 + possibility + "A"
-              }
-            }
-          }
+          let cursorDirections2 = directionalKeypad2.move(sequence: cursorDirection)
 
           print(cursorDirections2.map({ ($0.count, $0) }), cursorDirections2.count, line)
           print("-----")
