@@ -4,13 +4,6 @@ struct Day21: AdventDay {
   // Save your data in a corresponding text file in the `Data` directory.
   var data: String
 
-  enum Direction: Character, RawRepresentable {
-    case up = "^"
-    case down = "v"
-    case left = "<"
-    case right = ">"
-  }
-
   struct Position: Hashable {
     var row: Int
     var column: Int
@@ -18,22 +11,18 @@ struct Day21: AdventDay {
     func distance(to other: Position) -> Int {
       abs(row - other.row) + abs(column - other.column)
     }
-
-    mutating func move(to direction: Direction) {
-
-    }
   }
 
   struct KeypadRobot {
-    private var layout: [[Character]]
+    private(set) var layout: [[Character]]
 
-    private var dangerRow = 0
+    private(set) var dangerPosition: Position = Position(row: 0, column: 0)
     private(set) var pointer: Position = Position(row: 0, column: 0)
 
     init(layout: [[Character]]) {
       self.layout = layout
       self.pointer = position(for: "A")
-      self.dangerRow = position(for: " ").row
+      self.dangerPosition = position(for: " ")
     }
 
     func position(for char: Character) -> Position {
@@ -48,7 +37,10 @@ struct Day21: AdventDay {
     }
 
     func character(for position: Position) -> Character {
-      layout[position.row][position.column]
+      if position.row < 0 || position.column < 0 || position.row >= layout.count || position.column >= layout[position.row].count {
+        return " "
+      }
+      return layout[position.row][position.column]
     }
 
     mutating func move(to char: Character) -> Set<String> {
@@ -57,49 +49,54 @@ struct Day21: AdventDay {
     }
 
     mutating func move(to target: Position) -> Set<String> {
-      var directions = [Character]()
       //print(#function, pointer, target)
+      var validDirections = Set<String>()
 
-      directions += Array(repeating: "^", count: max(pointer.row-target.row, 0))
-      directions += Array(repeating: "v", count: max(target.row-pointer.row, 0))
-      directions += Array(repeating: ">", count: max(target.column-pointer.column, 0))
-      directions += Array(repeating: "<", count: max(pointer.column-target.column, 0))
+      var directions1 = [Character]()
+      var directions2 = [Character]()
 
-      var validPermutations: Set<String> = []
-      for permutation in directions.permutations(ofCount: directions.count) {
-
-        // Filter all invalid permutaions
-        var isValid = true
-        var testPointer = pointer
-        for direction in directions.compactMap(Direction.init) {
-          testPointer.move(to: direction)
-          if layout[testPointer.row][testPointer.column] == " " {
-            isValid = false
-            break
-          }
+      let corner1 = Position(row: target.row, column: pointer.column)
+      if corner1 != dangerPosition {
+        if pointer.row-target.row >= 0 {
+          directions1 += Array(repeating: "^", count: pointer.row-target.row)
+        } else {
+          directions1 += Array(repeating: "v", count: target.row-pointer.row)
         }
-        if isValid {
-          validPermutations.insert(String(permutation))
+        if pointer.column-target.column >= 0 {
+          directions1 += Array(repeating: "<", count: pointer.column-target.column)
+        } else {
+          directions1 += Array(repeating: ">", count: target.column-pointer.column)
         }
+        validDirections.insert(String(directions1))
+      }
+
+      let corner2 = Position(row: pointer.row, column: target.column)
+      if corner2 != dangerPosition {
+        if pointer.column-target.column >= 0 {
+          directions2 += Array(repeating: "<", count: pointer.column-target.column)
+        } else {
+          directions2 += Array(repeating: ">", count: target.column-pointer.column)
+        }
+        if pointer.row-target.row >= 0 {
+          directions2 += Array(repeating: "^", count: pointer.row-target.row)
+        } else {
+          directions2 += Array(repeating: "v", count: target.row-pointer.row)
+        }
+        validDirections.insert(String(directions2))
       }
 
       pointer = target
-      //print(#function, pointer, target, validPermutations)
-      return validPermutations
+      //print("valid directions: \(validDirections)")
+      return validDirections
     }
 
     func costForSequence(_ sequence: String, start pointer: Position) -> Int {
       var pointer = pointer
       return sequence.reduce(0) { cost, char in
-        let currentChar = character(for: pointer)
-        if currentChar == " " {
-          return cost + 1000000
-        } else {
-          let position = position(for: char)
-          let moveCost = pointer.distance(to: position)
-          pointer = position
-          return cost + moveCost
-        }
+        let position = position(for: char)
+        let moveCost = pointer.distance(to: position)
+        pointer = position
+        return cost + moveCost
       }
     }
 
@@ -125,10 +122,13 @@ struct Day21: AdventDay {
     var result = 0
 
     var numpadRobot = KeypadRobot.numericKeypad
-    var directionalKeypad = KeypadRobot.directionalKeypad
-    var directionalKeypad2 = KeypadRobot.directionalKeypad
 
     for line in data.split(separator: "\n") {
+      print(line)
+      let number = Int(line.trimmingCharacters(in: .letters)) ?? -1
+      var complexity = 0
+      var shortestPathLength = Int.max
+
       var numDirections = [""]
       for char in line {
         // Calculate possible directions for movement
@@ -140,59 +140,87 @@ struct Day21: AdventDay {
             $0 + possibility + "A"
           }
         }
-        //print(numDirections)
       }
-      let sortedNumDirections = numDirections.map {
-        (cost: directionalKeypad.costForSequence($0, start: directionalKeypad.pointer), directions: $0)
-      }.sorted(by: { $0.cost <= $1.cost })
-      let numpadSolution = sortedNumDirections.first!.directions
-      print("Sorted numpad directions: \(numpadSolution)")
 
+      print(numDirections.map({ ($0.count, $0) }), numDirections.count, line)
+      print("-----")
 
-      var cursorDirections = [""]
-      for char in numpadSolution {
-        // Calculate possible directions for movement
-        let directionPossibilities = directionalKeypad.move(to: char)
+      for numpadSolution in numDirections {
+        print(line)
+        print(numpadSolution)
 
-        // Combine new solutions with existing
-        cursorDirections = directionPossibilities.flatMap { possibility in
-          cursorDirections.map {
-            $0 + possibility + "A"
+        var directionalKeypad = KeypadRobot.directionalKeypad
+        var cursorDirections = [""]
+        for char in numpadSolution {
+          // Calculate possible directions for movement
+          let directionPossibilities = directionalKeypad.move(to: char)
+
+          // Combine new solutions with existing
+          cursorDirections = directionPossibilities.flatMap { possibility in
+            cursorDirections.map {
+              $0 + possibility + "A"
+            }
           }
         }
 
-      }
-      //print("Cursor directions: \(cursorDirections)")
-      let sortedCursorDirections = cursorDirections.map {
-        (cost: directionalKeypad2.costForSequence($0, start: directionalKeypad2.pointer), directions: $0)
-      }.sorted(by: { $0.cost <= $1.cost })
-      let cursor1Solution = sortedCursorDirections.first!.directions
-      print("Sorted numpad directions: \(cursor1Solution)")
+        print(cursorDirections.map({ ($0.count, $0) }), cursorDirections.count, line)
+        print("-----")
+
+        for cursorDirection in cursorDirections {
+
+          print(line)
+          print(numpadSolution)
+          print(cursorDirection)
+
+          var directionalKeypad2 = KeypadRobot.directionalKeypad
+          var cursorDirections2 = [""]
+          for char in cursorDirection {
+            // Calculate possible directions for movement
+            let directionPossibilities = directionalKeypad2.move(to: char)
+
+            // Combine new solutions with existing
+            cursorDirections2 = directionPossibilities.flatMap { possibility in
+              cursorDirections2.map {
+                $0 + possibility + "A"
+              }
+            }
+          }
+
+          print(cursorDirections2.map({ ($0.count, $0) }), cursorDirections2.count, line)
+          print("-----")
 
 
-      var cursorDirections2 = [""]
-      for char in sortedCursorDirections.first!.directions {
-        // Calculate possible directions for movement
-        let directionPossibilities = directionalKeypad2.move(to: char)
+          let testRobot = KeypadRobot.directionalKeypad
+          if let cursor2Direction = cursorDirections2.min(by: { $0.count < $1.count }) {
 
-        // Combine new solutions with existing
-        cursorDirections2 = directionPossibilities.flatMap { possibility in
-          cursorDirections2.map {
-            $0 + possibility + "A"
+            print(line)
+            print(numpadSolution)
+            print(cursorDirection)
+            print(cursor2Direction)
+            var pointer = testRobot.pointer
+            for char in cursor2Direction {
+              if char == "<" {
+                pointer = Position(row: pointer.row, column: pointer.column - 1)
+              } else if char == ">" {
+                pointer = Position(row: pointer.row, column: pointer.column + 1)
+              } else if char == "^" {
+                pointer = Position(row: pointer.row - 1, column: pointer.column)
+              } else if char == "v" {
+                pointer = Position(row: pointer.row + 1, column: pointer.column)
+              }
+              assert(pointer.row >= 0 && pointer.row < testRobot.layout.count && pointer.column >= 0 && pointer.column < testRobot.layout[pointer.row].count)
+              assert(pointer != testRobot.dangerPosition)
+              assert(testRobot.character(for: pointer) != " ")
+            }
+
+            if shortestPathLength > cursor2Direction.count {
+              shortestPathLength = cursor2Direction.count
+              complexity = cursor2Direction.count * number
+              print(line, "directions: \(cursor2Direction) length \(cursor2Direction.count) number \(number) complexity \(complexity)")
+            }
           }
         }
       }
-
-      let sortedCursorDirections2 = cursorDirections2.map {
-        (cost: $0.count, directions: $0)
-      }.sorted(by: { $0.cost <= $1.cost })
-
-      let cursor2Solution = sortedCursorDirections2.first!.directions
-      print("Sorted numpad directions: \(cursor2Solution)")
-
-      let number = Int(line.trimmingCharacters(in: .letters)) ?? -1
-      let complexity = cursor2Solution.count * number
-      print(line, "directions: \(cursor2Solution) (length \(cursor2Solution.count))", complexity)
       result += complexity
     }
 
@@ -202,6 +230,22 @@ struct Day21: AdventDay {
   // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Int {
     var result = 0
+
+
+    var keypadRobot = KeypadRobot.numericKeypad
+
+    func numberToDirections(_ char: Character) -> Set<String> {
+      keypadRobot.move(to: char)
+    }
+
+    for line in data.split(separator: "\n") {
+      print("Line \(line)")
+      for char in line {
+        print("Character \(char)")
+        print(numberToDirections(char))
+      }
+      break
+    }
 
     return result
   }
