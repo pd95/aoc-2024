@@ -66,13 +66,13 @@ struct Day21Tests {
     #expect(String(describing: challenge.part1()) == "242484")
   }
 
-//  @Test func testPart2() async throws {
-//    let challenge = Day21(data: testData)
-//    #expect(String(describing: challenge.part2()) == "126384")
-//  }
-//
-//  @Test func testRealPart2() async throws {
-//    let challenge = Day21()
-//    #expect(String(describing: challenge.part2()) == "242484")
-//  }
+  @Test func testPart2() async throws {
+    let challenge = Day21(data: testData)
+    #expect(String(describing: challenge.part2()) == "126384")
+  }
+
+  @Test func testRealPart2() async throws {
+    let challenge = Day21()
+    #expect(String(describing: challenge.part2()) == "242484")
+  }
 }

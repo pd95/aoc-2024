@@ -204,20 +204,46 @@ struct Day21: AdventDay {
   func part2() -> Int {
     var result = 0
 
-
-    var keypadRobot = KeypadRobot.numericKeypad
-
-    func numberToDirections(_ char: Character) -> Set<String> {
-      keypadRobot.move(to: char)
-    }
+    let numberOfDirectionalRobots = 2
 
     for line in data.split(separator: "\n") {
       print("Line \(line)")
-      for char in line {
-        print("Character \(char)")
-        print(numberToDirections(char))
+      var complexity = 0
+      var shortestPath: String?
+      var shortestPathLength = Int.max
+
+      var keypadRobot = KeypadRobot.numericKeypad
+      var nextCommands = keypadRobot.move(sequence: String(line))
+
+      for i in 0..<numberOfDirectionalRobots {
+        print("\(i) robot")
+        let commands = nextCommands
+        nextCommands.removeAll()
+        var previousCommandLength: Int?
+        for command in commands {
+          print("\(i) Line \(line) command \(command) \(command.count)")
+          if (previousCommandLength ?? Int.max) < command.count {
+            print("    Skipping command")
+            break
+          }
+          previousCommandLength = command.count
+          var robot = KeypadRobot.directionalKeypad
+          let newCommands = robot.move(sequence: command)
+          nextCommands.append(contentsOf: newCommands)
+          print("    ==> newCommands \(newCommands.count) (\(nextCommands.count))")
+        }
+
+        nextCommands.sort(by: { $0.count < $1.count })
       }
-      break
+
+      if let shortestPath = nextCommands.first {
+        shortestPathLength = shortestPath.count
+        let number = Int(line.trimmingCharacters(in: .letters)) ?? -1
+        complexity = shortestPathLength * number
+        print(line, "directions: \(shortestPath) length \(shortestPathLength) number \(number) complexity \(complexity)")
+
+        result += complexity
+      }
     }
 
     return result
