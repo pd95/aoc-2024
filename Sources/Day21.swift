@@ -49,10 +49,19 @@ struct Day21: AdventDay {
 
   typealias Edges = [Character: [String]]
 
-  class Graph {
+  actor ShortestPathCache {
+    static let shared = ShortestPathCache()
+
+    var shortestPathCache: [String: (cost: Int, paths: [String])] = [:]
+
+    func updateShortestPathCache(_ key: String, cost: Int, paths: [String]) {
+      shortestPathCache[key] = (cost: cost, paths: paths)
+    }
+  }
+
+  class Graph: @unchecked Sendable {
     private(set) var graph: Edges = [:]
     private(set) var paths: [Character: [Character: [String]]] = [:]
-    private(set) var shortestPathCache: [String: (cost: Int, paths: [String])] = [:]
 
     init(graph: Edges) {
       self.graph = graph
@@ -63,9 +72,9 @@ struct Day21: AdventDay {
       }
     }
 
-    func shortestPaths(from fromChar: Character, to toChar: Character) -> (cost: Int, paths: [String]) {
+    func shortestPaths(from fromChar: Character, to toChar: Character) async -> (cost: Int, paths: [String]) {
 
-      if let cachedResult = shortestPathCache["\(fromChar)\(toChar)"] {
+      if let cachedResult = await ShortestPathCache.shared.shortestPathCache["\(fromChar)\(toChar)"] {
         return cachedResult
       }
 
@@ -87,12 +96,12 @@ struct Day21: AdventDay {
         }
       }
 
-      shortestPathCache["\(fromChar)\(toChar)"] = (cost, paths)
+      await ShortestPathCache.shared.updateShortestPathCache("\(fromChar)\(toChar)", cost: cost, paths: paths)
 
       return (cost, paths)
     }
 
-    func transform(_ sequence: String) -> (cost: Int, paths: [[String]]) {
+    func transform(_ sequence: String) async -> (cost: Int, paths: [[String]]) {
 
       var resultCost = 0
       var resultPaths = [[String]]()
@@ -102,7 +111,7 @@ struct Day21: AdventDay {
         let fromChar = modifiedSequence[index]
         let toChar = modifiedSequence[modifiedSequence.index(after: index)]
 
-        let partialPath = shortestPaths(from: fromChar, to: toChar)
+        let partialPath = await shortestPaths(from: fromChar, to: toChar)
         resultCost += partialPath.cost
 
         resultPaths.append(partialPath.paths)
@@ -161,10 +170,10 @@ struct Day21: AdventDay {
   // Save your data in a corresponding text file in the `Data` directory.
   var data: String
 
-  func findMinimumCostPath(code: String, using keypads: [Graph], currentLevel: Int = 0) -> (cost: Int, paths: Set<String>) {
+  func findMinimumCostPath(code: String, using keypads: [Graph], currentLevel: Int = 0) async -> (cost: Int, paths: Set<String>) {
     //print(#function, code, currentLevel)
 
-    let result = keypads[currentLevel].transform(code)
+    let result = await keypads[currentLevel].transform(code)
 
     // further transformation required?
     if currentLevel + 1 < keypads.count {
@@ -174,7 +183,7 @@ struct Day21: AdventDay {
 
         var minCost = Int.max
         for path in part {
-          let transformedPart = findMinimumCostPath(code: path, using: keypads, currentLevel: currentLevel + 1)
+          let transformedPart = await findMinimumCostPath(code: path, using: keypads, currentLevel: currentLevel + 1)
           //print(transformedPart)
           if transformedPart.cost < minCost {
             minCost = transformedPart.cost
@@ -193,7 +202,7 @@ struct Day21: AdventDay {
 
 
   // Replace this with your solution for the first part of the day's challenge.
-  func part1() -> Int {
+  func part1() async -> Int {
     let codes = data.components(separatedBy: "\n")
     let numericKeypad = Graph.numericKeypad
     let directionalKeypad = Graph.directionalKeypad
@@ -203,7 +212,7 @@ struct Day21: AdventDay {
     var totalComplexity = 0
 
     for code in codes {
-      let result = findMinimumCostPath(code: code, using: keypads)
+      let result = await findMinimumCostPath(code: code, using: keypads)
       let number = Int(code.trimmingCharacters(in: .letters)) ?? -1
       let complexity = result.cost * number
       print(code, result.cost, result.paths.count, number, complexity)
@@ -214,7 +223,7 @@ struct Day21: AdventDay {
   }
 
   // Replace this with your solution for the second part of the day's challenge.
-  func part2() -> Int {
+  func part2() async -> Int {
     let codes = data.components(separatedBy: "\n")
     let numericKeypad = Graph.numericKeypad
     let directionalKeypad = Graph.directionalKeypad
@@ -222,15 +231,26 @@ struct Day21: AdventDay {
     // "only 11" keypads and still not performant
     let keypads: [Graph] = (0...10).map({ $0 == 0 ? numericKeypad : directionalKeypad })
 
-    var totalComplexity = 0
-    for code in codes {
-      let result = findMinimumCostPath(code: code, using: keypads)
-      let number = Int(code.trimmingCharacters(in: .letters)) ?? -1
-      let complexity = result.cost * number
-      print(code, result.cost, result.paths.count, number, complexity)
-      totalComplexity += complexity
+    let result = await withTaskGroup(of: Int.self) { group in
+      for code in codes {
+        group.addTask(priority: .high) {
+          print(code, "started")
+          let result = await findMinimumCostPath(code: code, using: keypads)
+          let number = Int(code.trimmingCharacters(in: .letters)) ?? -1
+          let complexity = result.cost * number
+          print(code, result.cost, result.paths.count, number, complexity)
+
+          return complexity
+        }
+      }
+
+      var totalComplexity = 0
+      for await complexity in group {
+        totalComplexity += complexity
+      }
+      return totalComplexity
     }
 
-    return totalComplexity
+    return result
   }
 }
