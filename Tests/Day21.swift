@@ -35,26 +35,48 @@ struct Day21Tests {
 
    */
 
+  @Test func testDynamicProgrammingShortestPath() async throws {
+    let challenge = Day21(data: testData)
 
-  @Test func testKeypadRobotMovePossibilities() async throws {
-    var robot = Day21.KeypadRobot.numericKeypad
-    #expect(robot.move(to: "7").count == 1)
-    #expect(robot.move(to: "0").count == 1)
-    #expect(robot.move(to: "6").count == 2)
-    #expect(robot.move(to: "1").count == 2)
-    #expect(robot.move(to: "9").count == 2)
-    #expect(robot.move(to: "4").count == 2)
-    #expect(robot.move(to: "A").count == 1)
+    let keyPad = Day21.Graph.numericKeypad
+    #expect(keyPad.shortestPaths(from: "A", to: "0").cost == 2)
+    #expect(keyPad.shortestPaths(from: "A", to: "0").paths == ["<A"])
+    #expect(keyPad.shortestPaths(from: "0", to: "2").paths == ["^A"])
+    #expect(keyPad.shortestPaths(from: "2", to: "9").paths == ["^^>A", ">^^A"])
+    #expect(keyPad.shortestPaths(from: "9", to: "A").paths == ["vvvA"])
 
-    robot = Day21.KeypadRobot.directionalKeypad
-    #expect(robot.move(to: "<").count == 1)
-    #expect(robot.move(to: "A").count == 1)
-    #expect(robot.move(to: "A").count == 1)
-    #expect(robot.move(to: "v").count == 2)
-    #expect(robot.move(to: ">").count == 1)
-    #expect(robot.move(to: "^").count == 2)
-    #expect(robot.move(to: "<").count == 1)
+    #expect(keyPad.transform("029A").cost == 12)
+    //#expect(keyPad.transform("029A").paths == ["<A^A>^^AvvvA", "<A^A^^>AvvvA"])
+
+
+    #expect(challenge.findMinimumCostPath(code: "029A", using: [.numericKeypad]).cost == 12)
+    #expect(challenge.findMinimumCostPath(code: "029A", using: [.numericKeypad]).paths.contains("<A^A>^^AvvvA"))
+    #expect(challenge.findMinimumCostPath(code: "029A", using: [.numericKeypad]).paths.contains("<A^A^^>AvvvA"))
+
+    #expect(challenge.findMinimumCostPath(code: "029A", using: [.numericKeypad, .directionalKeypad]).cost == 28)
+    #expect(challenge.findMinimumCostPath(code: "0", using: [.numericKeypad, .directionalKeypad, .directionalKeypad]).cost == 18)
+    #expect(challenge.findMinimumCostPath(code: "029A", using: [.numericKeypad, .directionalKeypad, .directionalKeypad]).cost == 68)
+    #expect(challenge.findMinimumCostPath(code: "980A", using: [.numericKeypad, .directionalKeypad, .directionalKeypad]).cost == 60)
+    #expect(challenge.findMinimumCostPath(code: "179A", using: [.numericKeypad, .directionalKeypad, .directionalKeypad]).cost == 68)
+    #expect(challenge.findMinimumCostPath(code: "456A", using: [.numericKeypad, .directionalKeypad, .directionalKeypad]).cost == 64)
+    #expect(challenge.findMinimumCostPath(code: "379A", using: [.numericKeypad, .directionalKeypad, .directionalKeypad]).cost == 64)
+
+//    #expect(challenge.transformSequenceOptimized("A029A", using: .numericKeypad).cost == 12)
+//    #expect(challenge.transformSequenceOptimized("A029A", using: .numericKeypad).minSequence == "<A^A>^^AvvvA")
+//
+//    #expect(challenge.transformSequenceOptimized("A<A^A>^^AvvvA", using: .directionalKeypad).cost == 28)
+//    #expect(challenge.transformSequenceOptimized("A<A^A>^^AvvvA", using: .directionalKeypad).minSequence == "<v<A>>^A<A>AvA<^AA>A<vAAA>^A")
+//
+//    #expect(challenge.transformSequenceOptimized("A<v<A>>^A<A>AvA<^AA>A<vAAA>^A", using: .directionalKeypad).cost == 70)
+//    #expect(challenge.transformSequenceOptimized("A<v<A>>^A<A>AvA<^AA>A<vAAA>^A", using: .directionalKeypad).minSequence == "<v<A>A<A>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A")
+//    #expect(challenge.transformSequenceOptimized("A<A^A>^^AvvvA", using: .directionalKeypad)
+//      .contains("v<<A>>^A<A>AvA<^AA>A<vAAA>^A"))
+//    #expect(challenge.transformSequenceOptimized("Av<<A>>^A<A>AvA<^AA>A<vAAA>^A", using: .directionalKeypad).cost == 68)
+    //#expect(challenge.dynamicProgrammingOptimizedPath(for: "029A", using: [.numericKeypad]) == "<A^A^^>AvvvA")
+
+    //#expect(challenge.dynamicProgrammingOptimizedPath(for: "029A", using: [.directionalKeypad, .numericKeypad]) == "<A^A^^>AvvvA")
   }
+
 
   @Test func testPart1() async throws {
     let challenge = Day21(data: testData)

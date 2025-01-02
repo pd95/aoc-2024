@@ -1,251 +1,236 @@
 import Algorithms
 
+extension Day21.Edges {
+  /*
+   Graph representation of numeric keypad
+   +---+---+---+
+   | 7 | 8 | 9 |
+   +---+---+---+
+   | 4 | 5 | 6 |
+   +---+---+---+
+   | 1 | 2 | 3 |
+   +---+---+---+
+   | 0 | A |
+   +---+---+
+   */
+
+  static let numericKeypad: Self = [
+    "7" : ["4v", "8>"],
+    "8" : ["7<", "9>", "5v"],
+    "9" : ["8<", "6v"],
+    "4" : ["7^", "5>", "1v"],
+    "5" : ["8^", "4<", "6>", "2v"],
+    "6" : ["9^", "5<", "3v"],
+    "1" : ["4^", "2>"],
+    "2" : ["5^", "1<", "3>", "0v"],
+    "3" : ["6^", "2<", "Av"],
+    "0" : ["2^", "A>"],
+    "A" : ["3^", "0<"]
+  ]
+
+
+  /* Graph representation of directional keypad
+   +---+---+
+   | ^ | A |
+   +---+---+---+
+   | < | v | > |
+   +---+---+---+
+   */
+  static let directionalKeypad: Self = [
+    "^" : ["A>", "vv"],
+    "A" : ["^<", ">v"],
+    ">" : ["A^", "v<"],
+    "<" : ["v>"],
+    "v" : ["<<", "^^", ">>"]
+  ]
+}
+
 struct Day21: AdventDay {
+
+  typealias Edges = [Character: [String]]
+
+  class Graph {
+    private(set) var graph: Edges = [:]
+    private(set) var paths: [Character: [Character: [String]]] = [:]
+    private(set) var shortestPathCache: [String: (cost: Int, paths: [String])] = [:]
+
+    init(graph: Edges) {
+      self.graph = graph
+
+      // Precompute all shortest paths
+      for start in graph.keys {
+        paths[start] = allShortestPaths(from: start)
+      }
+    }
+
+    func shortestPaths(from fromChar: Character, to toChar: Character) -> (cost: Int, paths: [String]) {
+
+      if let cachedResult = shortestPathCache["\(fromChar)\(toChar)"] {
+        return cachedResult
+      }
+
+      guard let movements = paths[fromChar]?[toChar] else {
+        fatalError("No valid path from \(fromChar) to \(toChar)")
+      }
+
+      var cost = Int.max
+      var paths = [String]()
+
+      for movement in movements {
+        let enhancedMovement = "\(movement)A"
+        let newCost = enhancedMovement.count
+        if newCost < cost {
+          cost = newCost
+          paths = [enhancedMovement]
+        } else if newCost == cost {
+          paths.append(enhancedMovement)
+        }
+      }
+
+      shortestPathCache["\(fromChar)\(toChar)"] = (cost, paths)
+
+      return (cost, paths)
+    }
+
+    func transform(_ sequence: String) -> (cost: Int, paths: [[String]]) {
+
+      var resultCost = 0
+      var resultPaths = [[String]]()
+
+      let modifiedSequence = "A\(sequence)"
+      for index in modifiedSequence.indices.dropLast() {
+        let fromChar = modifiedSequence[index]
+        let toChar = modifiedSequence[modifiedSequence.index(after: index)]
+
+        let partialPath = shortestPaths(from: fromChar, to: toChar)
+        resultCost += partialPath.cost
+
+        resultPaths.append(partialPath.paths)
+      }
+
+      return (resultCost, resultPaths)
+    }
+
+
+
+    private func cost(_ sequence: String) -> Int {
+      guard var previousChar = sequence.first else { return 0 }
+      var cost = 1
+      for char in sequence.dropFirst() {
+        if char == previousChar {
+          cost += 1
+        } else {
+          cost += 2
+        }
+        previousChar = char
+      }
+      return cost
+    }
+
+    private func allShortestPaths(from start: Character) -> [Character: [String]] {
+      var queue: [(Character, String)] = [(start, "")]
+      var visited: [Character: [String]] = [start: [""]]
+
+      while !queue.isEmpty {
+        let (node, sequence) = queue.removeFirst()
+
+        for neighborCode in graph[node] ?? [] {
+          let neighbor = neighborCode.first ?? "#"
+          let direction = neighborCode.last ?? "#"
+          let newSequence = sequence.appending(String(direction))
+          let newCost = cost(newSequence)
+          if visited[neighbor, default: []].count(where: { cost($0) < newCost }) == 0 {
+            //print(start, neighbor, newSequence)
+            visited[neighbor, default: []].append(newSequence)
+            queue.append((neighbor, newSequence))
+          }
+        }
+      }
+
+      return visited
+    }
+
+    static var numericKeypad: Graph {
+      Graph(graph: .numericKeypad)
+    }
+    static var directionalKeypad: Graph {
+      Graph(graph: .directionalKeypad)
+    }
+  }
+
   // Save your data in a corresponding text file in the `Data` directory.
   var data: String
 
-  struct Position: Hashable {
-    var row: Int
-    var column: Int
+  func findMinimumCostPath(code: String, using keypads: [Graph], currentLevel: Int = 0) -> (cost: Int, paths: Set<String>) {
+    //print(#function, code, currentLevel)
 
-    func distance(to other: Position) -> Int {
-      abs(row - other.row) + abs(column - other.column)
-    }
-  }
+    let result = keypads[currentLevel].transform(code)
 
-  struct KeypadRobot {
-    private(set) var layout: [[Character]]
+    // further transformation required?
+    if currentLevel + 1 < keypads.count {
+      var cost: Int = 0
 
-    private(set) var dangerPosition: Position = Position(row: 0, column: 0)
-    private(set) var pointer: Position = Position(row: 0, column: 0)
+      for part in result.paths {
 
-    init(layout: [[Character]]) {
-      self.layout = layout
-      self.pointer = position(for: "A")
-      self.dangerPosition = position(for: " ")
-    }
-
-    func position(for char: Character) -> Position {
-      for row in layout.indices {
-        for column in layout[row].indices {
-          if layout[row][column] == char {
-            return Position(row: row, column: column)
+        var minCost = Int.max
+        for path in part {
+          let transformedPart = findMinimumCostPath(code: path, using: keypads, currentLevel: currentLevel + 1)
+          //print(transformedPart)
+          if transformedPart.cost < minCost {
+            minCost = transformedPart.cost
           }
         }
-      }
-      fatalError("🔴 char \(char) not found")
-    }
 
-    func character(for position: Position) -> Character {
-      if position.row < 0 || position.column < 0 || position.row >= layout.count || position.column >= layout[position.row].count {
-        return " "
-      }
-      return layout[position.row][position.column]
-    }
+        cost += minCost
 
-    mutating func move(to char: Character) -> Set<String> {
-      //print(#function, char)
-      return move(to: position(for: char))
-    }
-
-    mutating func move(to target: Position) -> Set<String> {
-      //print(#function, pointer, target)
-      var validDirections = Set<String>()
-
-      var directions1 = [Character]()
-      var directions2 = [Character]()
-
-      let corner1 = Position(row: target.row, column: pointer.column)
-      if corner1 != dangerPosition {
-        if pointer.row-target.row >= 0 {
-          directions1 += Array(repeating: "^", count: pointer.row-target.row)
-        } else {
-          directions1 += Array(repeating: "v", count: target.row-pointer.row)
-        }
-        if pointer.column-target.column >= 0 {
-          directions1 += Array(repeating: "<", count: pointer.column-target.column)
-        } else {
-          directions1 += Array(repeating: ">", count: target.column-pointer.column)
-        }
-        validDirections.insert(String(directions1))
       }
 
-      let corner2 = Position(row: pointer.row, column: target.column)
-      if corner2 != dangerPosition {
-        if pointer.column-target.column >= 0 {
-          directions2 += Array(repeating: "<", count: pointer.column-target.column)
-        } else {
-          directions2 += Array(repeating: ">", count: target.column-pointer.column)
-        }
-        if pointer.row-target.row >= 0 {
-          directions2 += Array(repeating: "^", count: pointer.row-target.row)
-        } else {
-          directions2 += Array(repeating: "v", count: target.row-pointer.row)
-        }
-        validDirections.insert(String(directions2))
-      }
-
-      pointer = target
-      //print("valid directions: \(validDirections)")
-      return validDirections
+      return (cost, [])
     }
 
-    mutating func move(sequence: String) -> [String] {
-      var nextCommands = [""]
-      for char in sequence {
-        // Calculate possible directions for movement
-        let commands = self.move(to: char)
-
-        // Combine new solutions with existing
-        nextCommands = commands.flatMap { possibility in
-          nextCommands.map {
-            $0 + possibility + "A"
-          }
-        }
-      }
-      return nextCommands
-    }
-
-    static var numericKeypad: KeypadRobot {
-      KeypadRobot(layout: [
-        ["7", "8", "9"],
-        ["4", "5", "6"],
-        ["1", "2", "3"],
-        [" ", "0", "A"]
-      ])
-    }
-
-    static var directionalKeypad: KeypadRobot {
-      KeypadRobot(layout: [
-        [" ", "^", "A"],
-        ["<", "v", ">"]
-      ])
-    }
+    return (result.cost, [])
   }
+
 
   // Replace this with your solution for the first part of the day's challenge.
   func part1() -> Int {
-    var result = 0
+    let codes = data.components(separatedBy: "\n")
+    let numericKeypad = Graph.numericKeypad
+    let directionalKeypad = Graph.directionalKeypad
 
-    var numpadRobot = KeypadRobot.numericKeypad
+    let keypads: [Graph] = (0...2).map({ $0 == 0 ? numericKeypad : directionalKeypad })
 
-    for line in data.split(separator: "\n") {
-      print(line)
-      let number = Int(line.trimmingCharacters(in: .letters)) ?? -1
-      var complexity = 0
-      var shortestPathLength = Int.max
+    var totalComplexity = 0
 
-      let numDirections = numpadRobot.move(sequence: String(line))
-
-      print(numDirections.map({ ($0.count, $0) }), numDirections.count, line)
-      print("-----")
-
-      for numpadSolution in numDirections {
-        print(line)
-        print(numpadSolution)
-
-        var directionalKeypad = KeypadRobot.directionalKeypad
-        let cursorDirections = directionalKeypad.move(sequence: numpadSolution)
-
-        print(cursorDirections.map({ ($0.count, $0) }), cursorDirections.count, line)
-        print("-----")
-
-        for cursorDirection in cursorDirections {
-
-          print(line)
-          print(numpadSolution)
-          print(cursorDirection)
-
-          var directionalKeypad2 = KeypadRobot.directionalKeypad
-          let cursorDirections2 = directionalKeypad2.move(sequence: cursorDirection)
-
-          print(cursorDirections2.map({ ($0.count, $0) }), cursorDirections2.count, line)
-          print("-----")
-
-
-          let testRobot = KeypadRobot.directionalKeypad
-          if let cursor2Direction = cursorDirections2.min(by: { $0.count < $1.count }) {
-
-            print(line)
-            print(numpadSolution)
-            print(cursorDirection)
-            print(cursor2Direction)
-            var pointer = testRobot.pointer
-            for char in cursor2Direction {
-              if char == "<" {
-                pointer = Position(row: pointer.row, column: pointer.column - 1)
-              } else if char == ">" {
-                pointer = Position(row: pointer.row, column: pointer.column + 1)
-              } else if char == "^" {
-                pointer = Position(row: pointer.row - 1, column: pointer.column)
-              } else if char == "v" {
-                pointer = Position(row: pointer.row + 1, column: pointer.column)
-              }
-              assert(pointer.row >= 0 && pointer.row < testRobot.layout.count && pointer.column >= 0 && pointer.column < testRobot.layout[pointer.row].count)
-              assert(pointer != testRobot.dangerPosition)
-              assert(testRobot.character(for: pointer) != " ")
-            }
-
-            if shortestPathLength > cursor2Direction.count {
-              shortestPathLength = cursor2Direction.count
-              complexity = cursor2Direction.count * number
-              print(line, "directions: \(cursor2Direction) length \(cursor2Direction.count) number \(number) complexity \(complexity)")
-            }
-          }
-        }
-      }
-      result += complexity
+    for code in codes {
+      let result = findMinimumCostPath(code: code, using: keypads)
+      let number = Int(code.trimmingCharacters(in: .letters)) ?? -1
+      let complexity = result.cost * number
+      print(code, result.cost, result.paths.count, number, complexity)
+      totalComplexity += complexity
     }
 
-    return result
+    return totalComplexity
   }
 
   // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Int {
-    var result = 0
+    let codes = data.components(separatedBy: "\n")
+    let numericKeypad = Graph.numericKeypad
+    let directionalKeypad = Graph.directionalKeypad
 
-    let numberOfDirectionalRobots = 2
+    // "only 11" keypads and still not performant
+    let keypads: [Graph] = (0...10).map({ $0 == 0 ? numericKeypad : directionalKeypad })
 
-    for line in data.split(separator: "\n") {
-      print("Line \(line)")
-      var complexity = 0
-      var shortestPath: String?
-      var shortestPathLength = Int.max
-
-      var keypadRobot = KeypadRobot.numericKeypad
-      var nextCommands = keypadRobot.move(sequence: String(line))
-
-      for i in 0..<numberOfDirectionalRobots {
-        print("\(i) robot")
-        let commands = nextCommands
-        nextCommands.removeAll()
-        var previousCommandLength: Int?
-        for command in commands {
-          print("\(i) Line \(line) command \(command) \(command.count)")
-          if (previousCommandLength ?? Int.max) < command.count {
-            print("    Skipping command")
-            break
-          }
-          previousCommandLength = command.count
-          var robot = KeypadRobot.directionalKeypad
-          let newCommands = robot.move(sequence: command)
-          nextCommands.append(contentsOf: newCommands)
-          print("    ==> newCommands \(newCommands.count) (\(nextCommands.count))")
-        }
-
-        nextCommands.sort(by: { $0.count < $1.count })
-      }
-
-      if let shortestPath = nextCommands.first {
-        shortestPathLength = shortestPath.count
-        let number = Int(line.trimmingCharacters(in: .letters)) ?? -1
-        complexity = shortestPathLength * number
-        print(line, "directions: \(shortestPath) length \(shortestPathLength) number \(number) complexity \(complexity)")
-
-        result += complexity
-      }
+    var totalComplexity = 0
+    for code in codes {
+      let result = findMinimumCostPath(code: code, using: keypads)
+      let number = Int(code.trimmingCharacters(in: .letters)) ?? -1
+      let complexity = result.cost * number
+      print(code, result.cost, result.paths.count, number, complexity)
+      totalComplexity += complexity
     }
 
-    return result
+    return totalComplexity
   }
 }
