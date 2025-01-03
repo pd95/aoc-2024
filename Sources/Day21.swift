@@ -49,19 +49,13 @@ struct Day21: AdventDay {
 
   typealias Edges = [Character: [String]]
 
-  actor ShortestPathCache {
-    static let shared = ShortestPathCache()
-
-    var shortestPathCache: [String: (cost: Int, paths: [String])] = [:]
-
-    func updateShortestPathCache(_ key: String, cost: Int, paths: [String]) {
-      shortestPathCache[key] = (cost: cost, paths: paths)
-    }
-  }
-
-  class Graph: @unchecked Sendable {
+  class Graph {
     private(set) var graph: Edges = [:]
     private(set) var paths: [Character: [Character: [String]]] = [:]
+
+    private var shortestPathCache: [String: (cost: Int, paths: [String])] = [:]
+    private var transformCache: [String: (cost: Int, paths: [[String]])] = [:]
+    private(set) var costCache: [String: Int] = [:]
 
     init(graph: Edges) {
       self.graph = graph
@@ -72,9 +66,21 @@ struct Day21: AdventDay {
       }
     }
 
-    func shortestPaths(from fromChar: Character, to toChar: Character) async -> (cost: Int, paths: [String]) {
+    private func updateShortestPathCache(_ key: String, cost: Int, paths: [String]) {
+      shortestPathCache[key] = (cost: cost, paths: paths)
+    }
 
-      if let cachedResult = await ShortestPathCache.shared.shortestPathCache["\(fromChar)\(toChar)"] {
+    private func updateTransformCache(_ key: String, cost: Int, paths: [[String]]) {
+      transformCache[key] = (cost: cost, paths: paths)
+    }
+
+    func updateCostCache(_ key: String, cost: Int) {
+      costCache[key] = cost
+    }
+
+    func shortestPaths(from fromChar: Character, to toChar: Character) async -> (cost: Int, paths: [String]) {
+      let cacheKey = "\(fromChar)\(toChar)"
+      if let cachedResult = shortestPathCache[cacheKey] {
         return cachedResult
       }
 
@@ -96,12 +102,14 @@ struct Day21: AdventDay {
         }
       }
 
-      await ShortestPathCache.shared.updateShortestPathCache("\(fromChar)\(toChar)", cost: cost, paths: paths)
-
+      updateShortestPathCache(cacheKey, cost: cost, paths: paths)
       return (cost, paths)
     }
 
     func transform(_ sequence: String) async -> (cost: Int, paths: [[String]]) {
+      if let cachedResult = transformCache[sequence] {
+        return cachedResult
+      }
 
       var resultCost = 0
       var resultPaths = [[String]]()
@@ -117,9 +125,9 @@ struct Day21: AdventDay {
         resultPaths.append(partialPath.paths)
       }
 
+      updateTransformCache(sequence, cost: resultCost, paths: resultPaths)
       return (resultCost, resultPaths)
     }
-
 
 
     private func cost(_ sequence: String) -> Int {
@@ -172,6 +180,10 @@ struct Day21: AdventDay {
 
   func findMinimumCostPath(code: String, using keypads: [Graph], currentLevel: Int = 0) async -> (cost: Int, paths: Set<String>) {
     //print(#function, code, currentLevel)
+    let cacheKey = "\(code)\(currentLevel)"
+    if let cachedResult = keypads[currentLevel].costCache[cacheKey] {
+      return (cachedResult, [])
+    }
 
     let result = await keypads[currentLevel].transform(code)
 
@@ -191,12 +203,13 @@ struct Day21: AdventDay {
         }
 
         cost += minCost
-
       }
 
+      keypads[currentLevel].updateCostCache(cacheKey, cost: cost)
       return (cost, [])
     }
 
+    keypads[currentLevel].updateCostCache(cacheKey, cost: result.cost)
     return (result.cost, [])
   }
 
@@ -228,29 +241,18 @@ struct Day21: AdventDay {
     let numericKeypad = Graph.numericKeypad
     let directionalKeypad = Graph.directionalKeypad
 
-    // "only 11" keypads and still not performant
-    let keypads: [Graph] = (0...10).map({ $0 == 0 ? numericKeypad : directionalKeypad })
+    let keypads: [Graph] = (0...25).map({ $0 == 0 ? numericKeypad : directionalKeypad })
 
-    let result = await withTaskGroup(of: Int.self) { group in
-      for code in codes {
-        group.addTask(priority: .high) {
-          print(code, "started")
-          let result = await findMinimumCostPath(code: code, using: keypads)
-          let number = Int(code.trimmingCharacters(in: .letters)) ?? -1
-          let complexity = result.cost * number
-          print(code, result.cost, result.paths.count, number, complexity)
+    var totalComplexity = 0
 
-          return complexity
-        }
-      }
-
-      var totalComplexity = 0
-      for await complexity in group {
-        totalComplexity += complexity
-      }
-      return totalComplexity
+    for code in codes {
+      let result = await findMinimumCostPath(code: code, using: keypads)
+      let number = Int(code.trimmingCharacters(in: .letters)) ?? -1
+      let complexity = result.cost * number
+      print(code, result.cost, result.paths.count, number, complexity)
+      totalComplexity += complexity
     }
 
-    return result
+    return totalComplexity
   }
 }
